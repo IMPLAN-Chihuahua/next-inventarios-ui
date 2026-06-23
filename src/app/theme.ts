@@ -1,6 +1,6 @@
 import { createTheme } from "@mui/material/styles"; 
 import { blue } from "@mui/material/colors";
-import {Roboto} from 'next/font/google';
+import {Roboto, Raleway} from 'next/font/google';
 import { esES } from '@mui/material/locale';
 
 const roboto = Roboto({
@@ -8,6 +8,13 @@ const roboto = Roboto({
   subsets: ['latin'],
   display: 'swap',
 });
+
+const raleway = Raleway({
+  weight: ['300', '400', '500', '600', '700', '800'],
+  subsets: ['latin'],
+  display: 'swap',
+});
+
 
 const theme = createTheme({
   typography: {

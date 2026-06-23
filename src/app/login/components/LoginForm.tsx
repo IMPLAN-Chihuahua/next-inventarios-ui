@@ -6,7 +6,6 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Link from "@mui/material/Link";
-import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
 
 export default function LoginForm() {
@@ -26,8 +25,7 @@ export default function LoginForm() {
 
     setLoading(true);
 
-
-
+    //
     await new Promise((resolve) => setTimeout(resolve, 1000));
     console.log("Intento de login:", { username, password });
 
@@ -35,34 +33,32 @@ export default function LoginForm() {
   };
 
   return (
-    <Paper
-      elevation={3}
+    <Box
       sx={{
         width: "100%",
         maxWidth: 440,
-        borderRadius: 4,
-        p: { xs: 3, sm: 5 },
       }}
     >
-      <Typography variant="body2" color="secondary">
-        IMPLAN
+      <Typography  sx={{color: '#606062',fontWeight: 800, mb: 3 , textAlign: 'center'}} 
+>
+        Sistema de Gestión de Inventarios
       </Typography>
 
       <Typography
         variant="h3"
         component="h1"
-        sx={{ fontWeight: 700, mb: 4 }}
+        sx={{ fontWeight: 700, mb: 2, textAlign: 'center' }}
       >
         Iniciar sesión
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} noValidate>
         <Typography variant="body2" sx={{ mb: 1 }}>
-          Usuario o correo electrónico
+          Correo electrónico
         </Typography>
         <TextField
           fullWidth
-          placeholder="Usuario o correo electrónico"
+          placeholder="Correo electrónico"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           sx={{ mb: 3 }}
@@ -87,7 +83,7 @@ export default function LoginForm() {
           </Typography>
         )}
 
-        <Box sx={{mt: 1.5, mb: 3 }}></Box>
+        <Box sx={{mb: 8 }}></Box>
 
         <Button
           type="submit"
@@ -96,7 +92,7 @@ export default function LoginForm() {
           fullWidth
           size="large"
           disabled={loading}
-          sx={{ py: 1.5, fontWeight: 600 }}
+          sx={{ py: 1.5, fontWeight: 600, textTransform: "none" }}
         >
           {loading ? (
             <CircularProgress size={24} color="inherit" />
@@ -105,6 +101,6 @@ export default function LoginForm() {
           )}
         </Button>
       </Box>
-    </Paper>
+    </Box>
   );
 }

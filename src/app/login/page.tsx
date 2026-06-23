@@ -1,75 +1,66 @@
 import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
 import LoginForm from "./components/LoginForm";
-import implan from "../../../public/implan.png";
 import Image from 'next/image';
+import implanLogo from '../../../public/implan.png';
+import fondo_login from '../../../public/esta.png';
 
 export default function LoginPage() {
   return (
+    // box principal 
     <Box
       sx={{
-        minHeight: "100vh",
+        position: "relative", 
+        width: "100vw",
+        height: "100vh",
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        bgcolor: "background.default",
+        alignItems: "center",     
+        justifyContent: "center", 
+        overflow: "hidden"
       }}
     >
-      {/* Panel izquierdo */}
+      {/* box 1: Imagen de fondo */}
+      <Image
+        src={fondo_login}
+        alt="Fondo"
+        fill 
+        style={{ 
+          objectFit: 'cover', 
+          zIndex: 0,
+        }} 
+        priority 
+      />
+
+      {/* box 2: Login */}
       <Box
         sx={{
-          flex: { md: "0 0 55%" },
-          bgcolor: "secondary.800",
-          color: "#fff",
-          px: { xs: 4, md: 10 },
-          py: { xs: 6, md: 0 },
+          bgcolor: "#f4f6f8", 
+          borderRadius: 6,
+          boxShadow: "0 20px 40px rgba(0,0,0,0.3)", 
           display: "flex",
           flexDirection: "column",
-          justifyContent: "center",
-          position: "relative",
+          p: { xs: 4, md: 6 },
+          width: { xs: "90%", sm: "400px", md: "480px" }, 
+          position: "relative", 
+          zIndex: 1, // tarjeta por encima de la imagen
         }}
       >
-          <Box
-            sx={{
-              position: "absolute",
-              top: 32,
-              left: { xs: 32, md: 80 },
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            <Image
-              src={implan}
-              alt="Logo IMPLAN"
-              height={100} // Ajusta la altura deseada en píxeles
-              style={{ width: 'auto', height: 'auto'}} // Mantiene la proporción
-              priority 
-            />
-          </Box>
+        {/* Contenedor del Logo */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <Image
+            src={implanLogo}
+            alt="Logo IMPLAN"
+            height={100} 
+            style={{ width: 'auto', height: 'auto' }} 
+            priority 
+          />
+        </Box>
 
-        <Typography variant="h3" sx={{ fontWeight: 700, color: "#fff", mb: 1 }}>
-          Inicia sesión en
-        </Typography>
-        <Typography variant="h4" sx={{ fontWeight: 400, color: "#fff", mb: 3 }}>
-          Inventarios
-        </Typography>
-        <Typography variant="body1" sx={{ maxWidth: 420, color: "rgba(255,255,255,0.85)" }}>
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-          Phasellus sit amet metus felis. Vestibulum ac rhoncus erat. lacus. 
-        </Typography>
-      </Box>
+        {/* Formulario de inputs y botón */}
+        <Box sx={{ width: "100%" }}>
+          <LoginForm />
+        </Box>
 
-      {/* Panel derecho*/}
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          p: { xs: 3, md: 6 },
-        }}
-      >
-        <LoginForm />
       </Box>
-    </Box>
+    </Box>  
   );
 }
