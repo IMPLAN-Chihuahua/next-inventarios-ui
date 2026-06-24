@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Paper from '@mui/material/Paper';
 import LoginForm from "./components/LoginForm";
 import Image from 'next/image';
 import implanLogo from '../../../public/implan.png';
@@ -20,7 +21,7 @@ export default function LoginPage() {
     >
       {/* box 1: Imagen de fondo */}
       <Image
-        src={fondo_login}
+        src={'/esta.png'}
         alt="Fondo"
         fill 
         style={{ 
@@ -34,10 +35,11 @@ export default function LoginPage() {
       <Box
         sx={{
           bgcolor: "#f4f6f8", 
-          borderRadius: 6,
+          borderRadius: 14,
           boxShadow: "0 20px 40px rgba(0,0,0,0.3)", 
           display: "flex",
           flexDirection: "column",
+
           p: { xs: 4, md: 6 },
           width: { xs: "90%", sm: "400px", md: "480px" }, 
           position: "relative", 
@@ -55,7 +57,7 @@ export default function LoginPage() {
           />
         </Box>
 
-        {/* Formulario de inputs y botón */}
+        {/* Formulario de inputs y boton */}
         <Box sx={{ width: "100%" }}>
           <LoginForm />
         </Box>
