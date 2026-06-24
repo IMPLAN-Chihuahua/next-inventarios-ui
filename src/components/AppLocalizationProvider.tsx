@@ -11,9 +11,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <AppRouterCacheProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Box component="main" sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <div>
           {children}
-        </Box>
+        </div>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );
