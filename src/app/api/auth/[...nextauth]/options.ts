@@ -38,42 +38,39 @@ export const options: NextAuthOptions = {
       },
     }),
   ],
-    events: {
+  events: {
     signIn() {
-      () => {};
+      () => { };
     },
     signOut() {
-      () => {};
+      () => { };
     },
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const accessToken = user.accessToken;
-        const decoded = jwtDecode(accessToken) as any;
+        token.accessToken = (user as any).accessToken;
+        token.rol = (user as any).rol;
+
+        const decoded = jwtDecode((user as any).accessToken) as any;
         const expires = new Date(0);
         expires.setUTCSeconds(decoded.exp);
-
-        if (typeof user !== "undefined") {
-          token.user = user;
-        }
-
         token.tokenExpirationDate = expires;
+
         return token;
       }
-
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.accessToken = token.accessToken;
-        session.user.rol = token.rol;
+        (session.user as any).accessToken = token.accessToken;
+        (session.user as any).rol = token.rol;
       }
       return session;
     },
-},
-pages: {
-  signIn: "/login",
-},
+  },
+  pages: {
+    signIn: "/login",
+  },
   secret: process.env.NEXTAUTH_SECRET
 };
