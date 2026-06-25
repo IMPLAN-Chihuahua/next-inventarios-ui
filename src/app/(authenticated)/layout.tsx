@@ -1,4 +1,3 @@
-import "./globals.css";
 import { Providers } from "../../components/AppLocalizationProvider";
 import AuthProvider from "../(authenticated)/AuthProvider";
 
