@@ -1,6 +1,6 @@
 import "./globals.css";
-import { Providers } from "../components/AppLocalizationProvider";
-import AuthProvider from "./(authenticated)/AuthProvider";
+import { Providers } from "../../components/AppLocalizationProvider";
+import AuthProvider from "../(authenticated)/AuthProvider";
 
 export const metadata = {
   title: "Sistema de Inventarios IMPLAN",
@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>
           <AuthProvider>
-          {children}
+            {children}
           </AuthProvider>
         </Providers>
       </body>
