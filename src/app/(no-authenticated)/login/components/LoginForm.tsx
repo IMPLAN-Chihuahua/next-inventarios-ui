@@ -7,19 +7,19 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton'; 
+import IconButton from '@mui/material/IconButton';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Visibility from '@mui/icons-material/Visibility'; 
-import VisibilityOff from '@mui/icons-material/VisibilityOff'; 
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  
+
   // estado para la visibilidad de la contraseña
-  const [showPassword, setShowPassword] = useState(false); 
-  
+  const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,10 +66,10 @@ export default function LoginForm() {
         </Typography>
         <TextField
           fullWidth
-          variant="outlined" 
+          variant="outlined"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          slotProps={{ 
+          slotProps={{
             input: {
               startAdornment: (
                 <InputAdornment position="start">
@@ -89,7 +89,7 @@ export default function LoginForm() {
         <TextField
           fullWidth
           variant="outlined"
-          type={showPassword ? 'text' : 'password'} 
+          type={showPassword ? 'text' : 'password'}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
@@ -129,12 +129,14 @@ export default function LoginForm() {
           fullWidth
           size="large"
           disabled={loading}
-          sx={{ py: 1.5, fontWeight: 800, textTransform: "none"}}
+          sx={{
+            py: 1.5, fontWeight: 800, textTransform: "none",
+          }}
         >
           {loading ? (
             <CircularProgress size={24} color="inherit" />
           ) : (
-            "Iniciar sesión"
+            <Typography>Iniciar sesión</Typography>
           )}
         </Button>
       </Box>
