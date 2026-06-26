@@ -12,6 +12,10 @@ export default withAuth({
 export const config = {
     matcher: [
         '/',
-        '/articulos'
+        '/articulos',
+        '/categorias',
+        '/dashboard',
+        '/users'
+
     ]
 }
