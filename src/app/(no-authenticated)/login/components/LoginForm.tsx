@@ -1,143 +1,155 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import CircularProgress from "@mui/material/CircularProgress";
-import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import Visibility from '@mui/icons-material/Visibility';
-import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { useState } from "react";
+import {Typography,TextField,Button,Box,CircularProgress,IconButton,InputAdornment,Alert} from "@mui/material";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
+
+const loginSchema = z.object({
+  correo: z.string().email("Correo inválido").min(1, "Ingresa el Correo Electrónico"),
+  clave: z.string().min(1, "Ingresa la Contraseña"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const router = useRouter();
 
-  // estado para la visibilidad de la contraseña
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      correo: "",
+      clave: "",
+    },
+  });
 
-    if (!username || !password) {
-      setError("Ingresa tu usuario y contraseña");
-      return;
-    }
-
+  const onSubmit = async (data: LoginFormData) => {
+    setErrorMsg(null);
     setLoading(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log("Intento de login:", { username, password });
+    try{
+      const res = await signIn("next-inventarios-ui", {
+        correo: data.correo,
+        clave: data.clave,
+        redirect: false,
+      });
 
-    setLoading(false);
+      if (res?.ok) {
+        router.push("/");
+      } else {
+        setErrorMsg("Correo o Contraseña son incorrectos");
+      }
+    } catch (err){
+      setErrorMsg("Intenta de Nuevo.");
+    } finally{
+      setLoading(false);
+    }
   };
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        maxWidth: 440,
-      }}
-    >
-      <Typography sx={{ color: '#606062', fontWeight: 800, mb: 3, textAlign: 'center' }}>
+    <Box sx={{ width: "100%", maxWidth: 440 }}>
+      <Typography sx={{ color: "#606062", fontWeight: 800, mb: 3, textAlign: "center" }}>
         Sistema de Gestión de Inventarios
       </Typography>
 
-      <Typography
-        variant="h3"
-        component="h1"
-        sx={{ fontWeight: 700, mb: 2, textAlign: 'center' }}
-      >
+      <Typography variant="h3" component="h1" sx={{ fontWeight: 700, mb: 6, textAlign: "center", color: 'black'}}>
         Iniciar sesión
       </Typography>
 
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        {/* Campo de Correo */}
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          Correo electrónico
-        </Typography>
-        <TextField
-          fullWidth
-          variant="outlined"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <EmailOutlinedIcon color="action" />
-                </InputAdornment>
-              ),
-            }
-          }}
-          sx={{ mb: 3 }}
-          autoComplete="username"
+      <Box
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          width: "100%",
+          maxWidth: 400,
+        }}
+      >
+        {errorMsg && <Alert severity="error">{errorMsg}</Alert>}
+
+        <Controller
+          name="correo"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              label="Correo electrónico"
+              type="email"
+              fullWidth
+              error={!!errors.correo}
+              helperText={errors.correo?.message}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailOutlinedIcon />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          )}
         />
 
-        {/* contraseña */}
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          Contraseña
-        </Typography>
-        <TextField
-          fullWidth
-          variant="outlined"
-          type={showPassword ? 'text' : 'password'}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          autoComplete="current-password"
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <LockOutlinedIcon color="action" />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }
-          }}
+        <Controller
+          name="clave"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              
+              label="Contraseña"
+              type={showPassword ? "text" : "password"}
+              fullWidth
+              error={!!errors.clave}
+              helperText={errors.clave?.message}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <LockOutlinedIcon />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+          )}
         />
-
-        {error && (
-          <Typography variant="body2" color="error" sx={{ mt: 1.5 }}>
-            {error}
-          </Typography>
-        )}
-
-        <Box sx={{ mb: 8 }}></Box>
 
         <Button
           type="submit"
           variant="contained"
-          color="secondary"
           fullWidth
-          size="large"
           disabled={loading}
-          sx={{
-            py: 1.5, fontWeight: 800, textTransform: "none",
-          }}
+          sx={{ mt: 5, backgroundColor: 'secondary.main'}}
         >
-          {loading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            <Typography>Iniciar sesión</Typography>
-          )}
+          {loading ? <CircularProgress size={24} color="inherit" /> : "Iniciar sesión"}
         </Button>
       </Box>
     </Box>
