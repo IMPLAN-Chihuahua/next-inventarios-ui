@@ -1,10 +1,11 @@
+'use client'
 import Box from "@mui/material/Box";
 import Paper from '@mui/material/Paper';
 import LoginForm from "./components/LoginForm";
 import Image from 'next/image';
-import logoImplan from "../../../public/implan.png";
 
 export default function LoginPage() {
+  
   return (
     // box principal 
     <Box
@@ -20,7 +21,7 @@ export default function LoginPage() {
     >
       {/* box 1: Imagen de fondo */}
       <Image
-        src={'/esta.png'}
+        src={'/fondo_login.png'}
         alt="Fondo"
         fill
         style={{
@@ -57,9 +58,7 @@ export default function LoginPage() {
         </Box>
 
         {/* Formulario de inputs y boton */}
-        <Box sx={{ width: "100%" }}>
           <LoginForm />
-        </Box>
 
       </Box>
     </Box>
