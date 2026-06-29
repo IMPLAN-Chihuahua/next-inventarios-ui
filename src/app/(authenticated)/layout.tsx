@@ -1,20 +1,30 @@
-import { Providers } from "../../components/AppLocalizationProvider";
-import AuthProvider from "../(authenticated)/AuthProvider";
+import React from 'react';
+import Box from '@mui/material/Box';
+import AuthProvider from "./AuthProvider";
+import NavBar from '@/src/components/general/functional/NavBar';
 
 export const metadata = {
   title: "Sistema de Inventarios IMPLAN",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body>
-        <Providers>
-          <AuthProvider>
+    <AuthProvider>
+
+          <NavBar/>
+          
+          {/* contenedor paginas */}
+          <Box
+            // component="main"
+            // sx={{
+            //   flexGrow: 1,        
+            //   p: 3,              
+            //   backgroundColor: '#ffffff', 
+            // }}
+          >
             {children}
-          </AuthProvider>
-        </Providers>
-      </body>
-    </html>
+          </Box>
+
+    </AuthProvider>
   );
 }
