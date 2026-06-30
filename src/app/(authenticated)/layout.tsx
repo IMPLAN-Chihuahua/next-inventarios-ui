@@ -11,16 +11,10 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   return (
     <AuthProvider>
 
-          <NavBar/>
+          <NavBar/> 
           
           {/* contenedor paginas */}
           <Box
-            // component="main"
-            // sx={{
-            //   flexGrow: 1,        
-            //   p: 3,              
-            //   backgroundColor: '#ffffff', 
-            // }}
           >
             {children}
           </Box>

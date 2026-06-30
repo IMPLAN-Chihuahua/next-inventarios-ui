@@ -1,12 +1,11 @@
-import { Box } from "@mui/material";
-import Image from "next/image";
-import Dashboard from "../../components/Dashboard";
+import { Box } from '@mui/material';
+import Image from 'next/image';
+import Dashboard from '../../components/Dashboard';
 
 export default function Home() {
   return (
-    <Dashboard/>
+    <Box >
+      <Dashboard />
+    </Box>
   );
 }
-
-
-

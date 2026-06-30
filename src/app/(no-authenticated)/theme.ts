@@ -18,10 +18,10 @@ const raleway = Raleway({
 
 const theme = createTheme({
   typography: {
-    fontFamily: raleway.style.fontFamily,
+    fontFamily: roboto.style.fontFamily,
     allVariants: {
       color: '#202022',
-      fontFamily: raleway.style.fontFamily,
+      fontFamily: roboto.style.fontFamily,
     }
   },
   palette: {
