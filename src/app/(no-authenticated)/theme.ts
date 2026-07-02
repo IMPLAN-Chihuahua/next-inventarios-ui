@@ -2,6 +2,7 @@ import { createTheme } from "@mui/material/styles";
 import { blue } from "@mui/material/colors";
 import {Roboto, Raleway} from 'next/font/google';
 import { esES } from '@mui/material/locale';
+import ThemeRegistry from '@/src/components/ThemeRegistry';
 
 const roboto = Roboto({
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -18,10 +19,10 @@ const raleway = Raleway({
 
 const theme = createTheme({
   typography: {
-    fontFamily: roboto.style.fontFamily,
+    fontFamily: raleway.style.fontFamily,
     allVariants: {
       color: '#202022',
-      fontFamily: roboto.style.fontFamily,
+      fontFamily: raleway.style.fontFamily,
     }
   },
   palette: {
