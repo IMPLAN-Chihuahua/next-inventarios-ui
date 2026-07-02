@@ -1,6 +1,6 @@
 import { inventariosApi } from "@/src/services/axios";
 
-import type {Awaitable,NextAuthOptions,RequestInternal,User} from "next-auth";
+import type { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { jwtDecode } from "jwt-decode";
 
@@ -27,7 +27,6 @@ export const options: NextAuthOptions = {
 
           return { ...currentUser.data, accessToken: res.data.token };
         } catch (err) {
-          // throw err;
           return null;
         }
       },
@@ -42,12 +41,12 @@ export const options: NextAuthOptions = {
 
         token.accessToken = accessToken;
         token.rol = (user as any).rol;
+        token.nombre = (user as any).nombre;
 
         const decoded = jwtDecode(accessToken) as any;
         const expires = new Date(0);
         expires.setUTCSeconds(decoded.exp);
         token.tokenExpirationDate = expires;
-
       }
       return token;
     },
@@ -55,6 +54,7 @@ export const options: NextAuthOptions = {
       if (session.user) {
         (session.user as any).accessToken = token.accessToken;
         (session.user as any).rol = token.rol;
+        (session.user as any).nombre = token.nombre;
       }
       return session;
     },
@@ -62,5 +62,5 @@ export const options: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
 };
