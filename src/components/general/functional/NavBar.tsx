@@ -4,9 +4,8 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Box, Typography, IconButton, Avatar, Divider } from '@mui/material';
-import QrCode2OutlinedIcon from '@mui/icons-material/QrCode2Outlined';
-import PersonOutlineIcon from '@mui/icons-material/Person';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { QrCode } from 'lucide-react';
+import { User } from 'lucide-react';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Image from 'next/image';
 
@@ -150,8 +149,8 @@ export default function Navbar() {
             sx={{
               width: 35,
               height: 35,
-              backgroundColor: '#e3a74d',
-              color: '#fcfcfd',
+              backgroundColor: '#e3a74df9',
+              color: '#ffffff',
               transition: 'background-color 0.2s, transform 0.15s',
               '&:hover': {
                 backgroundColor: '#e9bd56',
@@ -159,7 +158,7 @@ export default function Navbar() {
               },
             }}
           >
-            <QrCode2OutlinedIcon sx={{ fontSize: 20 }} />
+            <QrCode size={16} />
           </IconButton>
 
           {/* boton del Usuario + drop */}
@@ -173,17 +172,18 @@ export default function Navbar() {
                 width: 40,
                 height: 40,
                 p: 0,
+                
               }}
             >
               <Avatar
                 sx={{
                   width: 36,
                   height: 36,
-                  backgroundColor: '#e5e7eb',
-                  color: '#4b5563',
+                  backgroundColor: '#1d1c1c',
+                  color: '#ffffff',
                 }}
               >
-                <AccountCircleIcon sx={{ fontSize: 20 }} />
+                <User size={16} />
               </Avatar>
             </IconButton>
 
@@ -195,9 +195,9 @@ export default function Navbar() {
                 right: 0,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 2,
+                gap: 1,
 
-                minWidth: 425, //tamaño del card
+                minWidth: 415, //tamaño del card
                 backgroundColor: '#ffffff',
                 borderRadius: '20px',
                 border: '1px solid #f0f0f1',
@@ -211,19 +211,6 @@ export default function Navbar() {
                 transition: 'opacity 0.18s ease, transform 0.18s ease, visibility 0.18s',
               }}
             >
-              {/* Icono circular */}
-              <Avatar
-                sx={{
-                  width: 44,
-                  height: 44,
-                  backgroundColor: '#ffffff',
-                  color: '#e3a74d',
-                  border: '1px solid #e5e7eb',
-                  flexShrink: 0,
-                }}
-              >
-                <PersonOutlineIcon sx={{ fontSize: 30 }} />
-              </Avatar>
 
               {/* Saludo y nombre */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -232,7 +219,7 @@ export default function Navbar() {
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: '0.8rem',
+                    fontSize: '0.8 rem',
                     color: '#6b7280',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
