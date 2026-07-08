@@ -1,16 +1,11 @@
 import { createTheme } from "@mui/material/styles"; 
 import { blue } from "@mui/material/colors";
-import {Roboto, Raleway} from 'next/font/google';
+import {Roboto, Montserrat} from 'next/font/google';
 import { esES } from '@mui/material/locale';
 import ThemeRegistry from '@/src/components/ThemeRegistry';
 
-const roboto = Roboto({
-  weight: ['300', '400', '500', '600', '700', '800'],
-  subsets: ['latin'],
-  display: 'swap',
-});
 
-const raleway = Raleway({
+const raleway = Montserrat({
   weight: ['300', '400', '500', '600', '700', '800'],
   subsets: ['latin'],
   display: 'swap',
@@ -19,10 +14,10 @@ const raleway = Raleway({
 
 const theme = createTheme({
   typography: {
-    fontFamily: raleway.style.fontFamily,
+    fontFamily: '"mirandaSans", sans-serif',
     allVariants: {
       color: '#202022',
-      fontFamily: raleway.style.fontFamily,
+      fontFamily: '"mirandaSans", sans-serif',
     }
   },
   palette: {
