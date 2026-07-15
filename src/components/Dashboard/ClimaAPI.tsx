@@ -1,88 +1,77 @@
 "use client";
 
 import { Box, Typography, CircularProgress } from "@mui/material";
-import {Sun,Moon,CloudSun,CloudMoon,Cloud,CloudFog,CloudLightning,CloudRain,CloudSunRain,CloudMoonRain,CloudSnow,CloudHail,Wind,MapPin,type LucideIcon} from "lucide-react";
 import { useState, useEffect } from "react";
 import { obtenerClima } from "../../services/weatherService";
 
-//  Mapa coigo -> icono / etiqueta 
-type ClimaVisual = { Icono: LucideIcon; etiqueta: string };
+type ClimaVisual = { archivoSvg: string; etiqueta: string };
 
-const getVisualClima = (codigo: number, esDeDia: number): ClimaVisual => {
+const getAmChartsIcon = (codigo: number, esDeDia: number): ClimaVisual => {
   const esDia = Boolean(esDeDia);
 
   if (codigo === 1000) {
-    return esDia ? { Icono: Sun, etiqueta: "Soleado" } : { Icono: Moon, etiqueta: "Soleado" };
+    return esDia ? { archivoSvg: "clear-day.svg", etiqueta: "Soleado" } : { archivoSvg: "clear-night.svg", etiqueta: "Despejado" };
   }
 
   if (codigo === 1003) {
     return esDia
-      ? { Icono: CloudSun, etiqueta: "Parcialmente nublado" }
-      : { Icono: CloudMoon, etiqueta: "Parcialmente nublado" };
+      ? { archivoSvg: "cloudy-1-day.svg", etiqueta: "Parcialmente nublado" }
+      : { archivoSvg: "cloudy-1-night.svg", etiqueta: "Parcialmente nublado" };
   }
 
   if ([1006, 1009].includes(codigo)) {
-    return { Icono: Cloud, etiqueta: "Nublado" };
+    return { archivoSvg: "cloudy.svg", etiqueta: "Nublado" };
   }
 
   if ([1030, 1135, 1148].includes(codigo)) {
-    return { Icono: CloudFog, etiqueta: "Niebla" };
+    return esDia
+    ? { archivoSvg: "fog-day.svg", etiqueta: "Niebla" }
+    : { archivoSvg: "fog-night.svg", etiqueta: "Niebla"}
   }
 
   if ([1087, 1273, 1276, 1279, 1282].includes(codigo)) {
-    return { Icono: CloudLightning, etiqueta: "Tormenta" };
+    return { archivoSvg: "thunderstorms.svg", etiqueta: "Tormenta" };
   }
 
   if ([1150, 1153, 1168, 1171, 1180, 1183, 1198].includes(codigo)) {
-    return esDia
-      ? { Icono: CloudSunRain, etiqueta: "Lluvia ligera" }
-      : { Icono: CloudMoonRain, etiqueta: "Lluvia ligera" };
+    return { archivoSvg: "rainy-1.svg", etiqueta: "Lluvia ligera" };
   }
 
   if (codigo >= 1186 && codigo <= 1207) {
-    return { Icono: CloudRain, etiqueta: "Lluvioso" };
+    return { archivoSvg: "rainy-3.svg", etiqueta: "Lluvioso" };
   }
 
   if ([1237, 1249, 1252, 1261, 1264].includes(codigo)) {
-    return { Icono: CloudHail, etiqueta: "Granizo" };
+    return { archivoSvg: "rainy-7.svg", etiqueta: "Granizo" }; 
   }
 
   if ((codigo >= 1210 && codigo <= 1225) || (codigo >= 1255 && codigo <= 1258)) {
-    return { Icono: CloudSnow, etiqueta: "Nieve" };
+    return { archivoSvg: "snowy-3.svg", etiqueta: "Nieve" };
   }
 
-  return { Icono: Wind, etiqueta: "Viento" };
+  return { archivoSvg: "wind.svg", etiqueta: "Viento" };
 };
 
-//  Mapa etiqueta -> color de acento 
-const getColorAcento = (etiqueta: string): { claro: string; icono: string } => {
-  switch (etiqueta) {
-    case "Soleado":
-      return { claro: "rgba(255, 200, 60, 0.35)", icono: "#e3a74d" };
-    case "Parcialmente nublado":
-      return { claro: "rgba(255, 200, 90, 0.22)", icono: "#c99a4a" };
-    case "Nublado":
-    case "Niebla":
-      return { claro: "rgba(148, 163, 184, 0.30)", icono: "#64748b" };
-    case "Lluvioso":
-    case "Lluvia ligera":
-      return { claro: "rgba(96, 165, 250, 0.30)", icono: "#3b82f6" };
-    case "Tormenta":
-      return { claro: "rgba(129, 140, 248, 0.32)", icono: "#6366f1" };
-    case "Nieve":
-      return { claro: "rgba(125, 211, 252, 0.28)", icono: "#38bdf8" };
-    case "Granizo":
-      return { claro: "rgba(148, 197, 219, 0.30)", icono: "#5b93ab" };
-    case "Viento":
-      return { claro: "rgba(94, 234, 212, 0.28)", icono: "#14b8a6" };
-    default:
-      return { claro: "rgba(203, 213, 225, 0.30)", icono: "#94a3b8" };
-  }
+const esRespuestaValida = (datos: any): boolean => {
+  const ciudadValida =
+    typeof datos?.location?.name === "string" && datos.location.name.trim().length > 0;
+
+  const paisValido =
+    typeof datos?.location?.country === "string" && datos.location.country.trim().length > 0;
+
+  const temperaturaValida = typeof datos?.current?.temp_c === "number";
+
+  const condicionValida = typeof datos?.current?.condition?.code === "number";
+
+  if (!ciudadValida) console.warn("Clima: la API no devolvió un nombre de ciudad válido.");
+  if (!paisValido) console.warn("Clima: la API no devolvió un país válido.");
+  if (!temperaturaValida) console.warn("Clima: la API no devolvió una temperatura válida.");
+  if (!condicionValida) console.warn("Clima: la API no devolvió un código de condición válido.");
+
+  return ciudadValida && paisValido && temperaturaValida && condicionValida;
 };
 
-const RADIUS = 18; 
-
-//  Componente principal 
+// Componente principal
 export default function ClimaAPI() {
   const [clima, setClima] = useState<any>(null);
   const [cargando, setCargando] = useState(true);
@@ -91,11 +80,17 @@ export default function ClimaAPI() {
   useEffect(() => {
     const consultarDatos = async () => {
       try {
-        const ciudadAsignada = "Chihuahua";
+        const ciudadAsignada = "Chihuahua, Chihuahua";
         const datos = await obtenerClima(ciudadAsignada);
+
+        if (!esRespuestaValida(datos)) {
+          setError(true);
+          return;
+        }
 
         setClima({
           ciudad: datos.location.name,
+          pais: datos.location.country,
           temperatura: Math.round(datos.current.temp_c),
           codigoCondicion: datos.current.condition.code,
           esDeDia: datos.current.is_day,
@@ -112,91 +107,124 @@ export default function ClimaAPI() {
     consultarDatos();
   }, []);
 
-  const baseSx = {
-    width: "100%",
-    maxWidth: 360,
-    height: 100,
-    borderRadius: `${RADIUS}px`,
-    bgcolor: "#fefefe",
-    border: "1px solid rgba(0, 0, 0, 0.1)",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.02)",
-    display: "flex",
+  // capsula — ahora más compacta (altura fija, no min-height "elástico")
+  const pillWrapperSx = {
+    display: "inline-flex",
     alignItems: "center",
-    gap: 1.5,
-    px: 2.5,
+    borderRadius: "999px",
+    overflow: "hidden",
+    background: "#c3decf",
+    height: 40,
   };
 
   if (cargando) {
     return (
-      <Box sx={{ ...baseSx, justifyContent: "center" }}>
-        <CircularProgress size={22} sx={{ color: "#94a3b8" }} />
+      <Box sx={pillWrapperSx}>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", px: 2.5, height: "100%" }}>
+          <CircularProgress size={16} sx={{ color: "#94a3b8" }} />
+        </Box>
       </Box>
     );
   }
 
   if (error || !clima) {
     return (
-      <Box sx={{ ...baseSx, justifyContent: "center" }}>
-        <Typography sx={{ fontWeight: 500, color: "#86868b", fontSize: "0.85rem" }}>
+      <Box sx={pillWrapperSx}>
+        <Typography sx={{ fontWeight: 500, color: "#86868b", fontSize: "0.78rem", px: 2.5 }}>
           Información no disponible
         </Typography>
       </Box>
     );
   }
 
-  const { Icono, etiqueta } = getVisualClima(clima.codigoCondicion, clima.esDeDia);
-  const { claro, icono } = getColorAcento(etiqueta);
-
-  const fecha = new Date(clima.fechaHora.replace(" ", "T"));
-
-  const fechaCruda = fecha.toLocaleString("es-MX", {
-    weekday: "short",
-    day: "2-digit",
-    month: "long",
-  });
-
-  const fechaFormateada = fechaCruda.charAt(0).toUpperCase() + fechaCruda.slice(1);
+  const { archivoSvg, etiqueta } = getAmChartsIcon(clima.codigoCondicion, clima.esDeDia);
 
   return (
     <Box
       sx={{
-        ...baseSx,
-        position: "relative",
-        overflow: "hidden",
-        background: `radial-gradient(120% 120% at 0% 0%, ${claro} 0%, rgba(255,255,255,0) 65%), #fefefe`,
+        ...pillWrapperSx,
+        animation: "climaFadeIn 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)",
+        "@keyframes climaFadeIn": {
+          from: { opacity: 0, transform: "translateY(6px)" },
+          to: { opacity: 1, transform: "translateY(0)" },
+        },
       }}
     >
-      {/* Marca de agua de icono */}
+      {/* circulo azul con icono + temperatura + etiqueta */}
       <Box
         sx={{
-          position: "absolute",
-          right: -5,
-          bottom: -14,
-          opacity: 0.5,
-          pointerEvents: "none",
-          zIndex: 0,
-          color: "#1d1d1f",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 0.75,
+          background: "#eef1f4",   
+          borderRadius: "999px",
+          px: 1.75,
+          height: "100%",
+          margin: "-1px",
+          boxShadow: "0 1px 3px rgba(74,153,224,0.35)",
         }}
       >
-        <Icono color={icono} size={110} strokeWidth={1.5} />
+        <Box
+          sx={{
+            display: "flex",
+            //mb: 0.5,
+            alignItems: "center",
+            justifyContent: "center",
+            width: 20,
+            height: 20,
+            flexShrink: 0,
+          }}
+        >
+          <img
+            src={`/iconsWheater/${archivoSvg}`}
+            alt={etiqueta}
+            style={{ width: "35px", height: "35px", display: "block" }}
+          />
+        </Box>
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: "1rem",
+            color: "#3a3a3c",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {`${clima.temperatura} °C`}
+        </Typography>
+        <Typography
+          sx={{
+            fontWeight: 700,
+            fontSize: "1rem",
+            color: "#3a3a3c",
+            lineHeight: 1,
+            whiteSpace: "nowrap",
+          }}
+        >
+          {etiqueta}
+        </Typography>
       </Box>
 
-
-      {/* Textos */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.4, position: "relative", zIndex: 1}}>
-        <Box sx={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-          <Typography sx={{ fontWeight: 700, fontSize: "2rem", color: "#1d1d1f", lineHeight: 1 }}>
-            {clima.temperatura}°
-          </Typography>
-          <Typography sx={{ fontWeight: 600, fontSize: "0.95rem", color: "#1d1d1f" }}>
-            {etiqueta}
-          </Typography>
-        </Box>
-        <Typography sx={{ fontSize: "0.78rem", color: "#86868b", fontWeight: 500 }}>
-         <MapPin size={12}/> {clima.ciudad}
-        </Typography>
-        <Typography sx={{ fontSize: "0.68rem", color: "#a3a3a3" }}>
-          {fechaFormateada}
+      {/* solo ciudad */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          pl: 0.5,
+          pr: 2,
+          height: "100%",
+        }}
+      >
+        <Typography
+          sx={{
+            fontWeight: 900,
+            fontSize: "1rem",
+            color: "rgb(255, 255, 255)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {clima.ciudad}
         </Typography>
       </Box>
     </Box>

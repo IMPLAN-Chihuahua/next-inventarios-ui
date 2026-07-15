@@ -6,9 +6,7 @@ export const obtenerClima = async (ciudad: string) => {
   }
 
   const url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${ciudad}&lang=es`;
-  
-  const respuesta = await fetch(url);
-  
+  const respuesta = await fetch(url, { cache: "no-store" }); 
   if (!respuesta.ok) {
     throw new Error("Error en la peticion");
   }
