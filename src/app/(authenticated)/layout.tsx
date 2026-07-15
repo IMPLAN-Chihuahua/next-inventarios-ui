@@ -3,6 +3,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import AuthProvider from "./AuthProvider";
 import NavBar from '@/src/components/general/functional/NavBar';
 import ThemeRegistry from '@/src/components/ThemeRegistry';
+import { DashboardHeader } from '@/src/components/Dashboard/headerBlanco';
 
 export const metadata = {
   title: "Sistema de Inventarios IMPLAN",
@@ -18,22 +19,19 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
             
             <Box
               sx={{
-                bgcolor: '#f5f5f7',
+                bgcolor: '#fbf9f6',
                 minHeight: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
               }}
             >
-              <NavBar />
+              <DashboardHeader/>
+              <NavBar/>
 
               <Box
                 component="main"
                 sx={{
                   flexGrow: 1,
-                  pt: { xs: '90px', md: '130px' },
-                  px: { xs: 2, md: 4, lg: 6 },
-                  maxWidth: 1440,
-                  mx: 'auto',
                   width: '100%',
                 }}
               >
