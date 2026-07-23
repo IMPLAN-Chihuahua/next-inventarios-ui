@@ -2,50 +2,40 @@
 
 import React, { useEffect, useRef } from "react";
 import { Box, ButtonBase, Typography } from "@mui/material";
-import { ArrowDownToLine, PrinterCheck, FileDown, CarFront, ArrowRight, type LucideIcon } from "lucide-react";
-
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      "lord-icon": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        src?: string;
-        trigger?: string;
-        colors?: string;
-      };
-    }
-  }
-}
+import { ArrowRight } from "lucide-react";
 
 interface AccionRapida {
-  icon: LucideIcon;
   step: string;
   titulo: string;
   color: string;
-  lordIconSrc?: string;
+  lordIconSrc: string;
   onClick?: () => void;
 }
 
 const acciones: AccionRapida[] = [
   {
-    icon: CarFront,
     step: "Resguardo",
     titulo: "Vehicular",
-    color: "#e3a74d",
-    lordIconSrc: "https://cdn.lordicon.com/xwpcjash.json",
+    color: "#94B8BA",
+    lordIconSrc: "https://cdn.lordicon.com/byupthur.json",
   },
   {
-    icon: PrinterCheck,
     step: "Imprimir",
     titulo: "Etiquetas QR",
-    color: "#e3a74d",
-    lordIconSrc: "https://cdn.lordicon.com/yraqammt.json",
+    color: "#94B8BA",
+    lordIconSrc: "https://cdn.lordicon.com/ggnoyhfp.json",
   },
   {
-    icon: ArrowDownToLine,
     step: "Descargar",
     titulo: "Resguardos",
-    color: "#e3a74d",
-    lordIconSrc: "https://cdn.lordicon.com/bimokqfw.json",
+    color: "#94B8BA",
+    lordIconSrc: "https://cdn.lordicon.com/tsrgicte.json",
+  },
+  {
+    step: "Agregar",
+    titulo: "Artículos",
+    color: "#94B8BA",
+    lordIconSrc: "https://cdn.lordicon.com/fikcyfpp.json",
   },
 ];
 
@@ -78,33 +68,34 @@ export default function BotonesGridAmarillo() {
 
   const resetIcon = (titulo: string) => {
     const el = lordIconRefs.current[titulo];
-    el?.playerInstance?.stop(); // o .goToFirstFrame() si tu versión lo soporta
+    el?.playerInstance?.stop(); 
   };
 
   return (
-    <Box sx={{ py: 2, display: "flex", justifyContent: "flex-start" }}>
+    <Box sx={{ display: "flex", width: "100%", height: "100%" }}>
       <Box
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" },
-          gap: 1,
-          maxWidth: 360,
+          gap: 2.5,
           width: "100%",
+          height: "100%"
         }}
       >
-        {acciones.map(({ icon: Icon, step, titulo, color, lordIconSrc, onClick }) => {
+        {acciones.map(({ step, titulo, color, lordIconSrc, onClick }) => {
           const rgb = hexToRgb(color);
 
           return (
             <ButtonBase
               key={titulo}
               onClick={onClick}
-              onMouseEnter={() => lordIconSrc && playIcon(titulo)}
-              onMouseLeave={() => lordIconSrc && resetIcon(titulo)}
+              onMouseEnter={() => playIcon(titulo)}
+              onMouseLeave={() => resetIcon(titulo)}
               sx={{
                 position: "relative",
                 width: "100%",
-                aspectRatio: "1/1",
+                height: "100%",
+                minHeight: 130,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "stretch",
@@ -117,9 +108,8 @@ export default function BotonesGridAmarillo() {
                 transition: "all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)",
                 "&:hover": {
                   transform: "translateY(-6px)",
-                  boxShadow: `0 14px 24px rgba(${rgb}, 0.22)`,
                   background: `radial-gradient(120% 120% at 100% 100%, rgba(${rgb}, 0.10) 0%, rgba(255,255,255,0) 65%), #fefefe`,
-                  "& .watermark-icon": { color: color, opacity: 0.4 },
+                  "& .watermark-icon": { opacity: 0.8 },
                   "& .mas-informacion": { opacity: 0.9, transform: "translateY(0)" },
                 },
               }}
@@ -128,31 +118,27 @@ export default function BotonesGridAmarillo() {
                 className="watermark-icon"
                 sx={{
                   position: "absolute",
-                  right: -8,
+                  right: 3, 
                   bottom: -8,
-                  opacity: 0.1,
+                  opacity: 0.3, 
                   pointerEvents: "none",
                   zIndex: 0,
-                  color: "#1d1d1f",
-                  transition: "color 0.4s ease, opacity 0.4s ease",
+                  transition: "opacity 0.4s ease",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                {lordIconSrc ? (
-                  React.createElement("lord-icon", {
-                    ref: (el: any) => {
-                      lordIconRefs.current[titulo] = el;
-                    },
-                    src: lordIconSrc,
-                    trigger: "loop-on-hover",
-                    colors: `primary:${color}`,
-                    style: { width: "100px", height: "100px", pointerEvents: "auto" },
-                  })
-                ) : (
-                  <Icon size={80} strokeWidth={2} />
-                )}
+                {React.createElement("lord-icon", {
+                  ref: (el: any) => {
+                    lordIconRefs.current[titulo] = el;
+                  },
+                  src: lordIconSrc,
+                  delay: "2000",
+                  stroke: "bold",
+                  colors: "primary:#121331,secondary:#467a77",
+                  style: { width: "120px", height: "120px", pointerEvents: "auto" },
+                })}
               </Box>
 
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", p: 2, position: "relative", zIndex: 1 }}>
@@ -160,7 +146,7 @@ export default function BotonesGridAmarillo() {
                   <Typography sx={{ color: "#86868b", fontWeight: 600, fontSize: "0.7rem", letterSpacing: "0.05em", mb: 0.5 }}>
                     {step}
                   </Typography>
-                  <Typography sx={{ color: "#1d1d1f", fontWeight: 600, fontSize: "1rem", letterSpacing: "-0.015em", lineHeight: 1.1 }}>
+                  <Typography sx={{ color: "#467A77", fontWeight: 900, fontSize: "1rem", letterSpacing: "-0.015em", lineHeight: 1.1 }}>
                     {titulo}
                   </Typography>
                 </Box>

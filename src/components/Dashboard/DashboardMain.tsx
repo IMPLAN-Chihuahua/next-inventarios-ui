@@ -26,6 +26,7 @@ import {
   Cell,
 } from "recharts";
 import ClimaAPI from "./ClimaAPI";
+import BotonesGridAmarillo from "./BotonesGrid"; // Asegura que la ruta coincida con el nombre real de tu archivo
 
 // ============================================================
 // CardShell — shell reutilizable con ícono + color de acento
@@ -85,7 +86,7 @@ const CardShell = ({
               width: 32,
               height: 32,
               borderRadius: "9px",
-              bgcolor: `${accentColor}1f`, // ~12% opacidad
+              bgcolor: `${accentColor}1f`, 
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -167,9 +168,6 @@ const dataUbicacion = [
   { ubicacion: "Almacén", total: 90 },
 ];
 
-
-
-
 // ============================================================
 // Dashboard
 // ============================================================
@@ -183,14 +181,12 @@ const Dashboard = () => {
         p: 0, 
       }}
     >
-      
-
       {/* Contenedor del contenido principal con padding independiente */}
       <Box 
         component="main" 
         sx={{ 
-          px: { xs: 3, sm: 5 }, // Debe coincidir con el px de DashboardHeader
-          py: 4, // Espacio entre el navbar y las tarjetas
+          px: { xs: 3, sm: 5 }, 
+          py: 4, 
           pb: 8 
         }}
       >
@@ -206,41 +202,10 @@ const Dashboard = () => {
             mb: 2.5,
           }}
         >
-          <CardShell
-            title="Resguardo Vehicular"
-            icon={Package}
-            accentColor="#5081A5"
-            sx={{ gridColumn: "1", gridRow: "1" }}
-          >
-            <KpiContent value="1,284" trend="4.2%" trendUp caption="vs. mes anterior" />
-          </CardShell>
-
-          <CardShell
-            title="Imprimir Etiquetas QR"
-            icon={ShieldCheck}
-            accentColor="#467A77"
-            sx={{ gridColumn: "2", gridRow: "1" }}
-          >
-            <KpiContent value="367" trend="2.1%" trendUp caption="vs. mes anterior" />
-          </CardShell>
-
-          <CardShell
-            title="Descargar Resguardos"
-            icon={Users}
-            accentColor="#94B8BA"
-            sx={{ gridColumn: "1", gridRow: "2" }}
-          >
-            <KpiContent value="58" trend="1.3%" trendUp caption="vs. semana pasada" />
-          </CardShell>
-
-          <CardShell
-            title="Agregar Articulos"
-            icon={CarFront}
-            accentColor="#5081A5"
-            sx={{ gridColumn: "2", gridRow: "2" }}
-          >
-            <KpiContent value="24" trend="0.8%" trendUp={false} caption="vs. mes anterior" />
-          </CardShell>
+          {/* Componente importado que sustituye a los 4 CardShells previos */}
+          <Box sx={{ gridColumn: "1 / 3", gridRow: "1 / 3", width: "100%", height: "100%" }}>
+            <BotonesGridAmarillo />
+          </Box>
 
           <CardShell
             title="Movimiento de Inventario Mensual"
@@ -280,19 +245,11 @@ const Dashboard = () => {
             mb: 2.5,
           }}
         >
-          <CardShell title="Distribución por Ubicación" accentColor="#94B8BA">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dataUbicacion} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="ubicacion" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Bar dataKey="total" fill="#94B8BA" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardShell title="Grafica" accentColor="#94B8BA">
+            {/* Placeholder */}
           </CardShell>
 
-          <CardShell title="Cumplimiento de Auditoría" accentColor="#5081A5">
+          <CardShell title="Grafica" accentColor="#5081A5">
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
               <ResponsiveContainer width="100%" height={180}>
                 <PieChart>
@@ -313,7 +270,7 @@ const Dashboard = () => {
             </Box>
           </CardShell>
 
-          <CardShell title="Actividad por Categoría" accentColor="#467A77">
+          <CardShell title="Categorias" accentColor="#467A77">
             <Box
               sx={{
                 flex: 1,
@@ -335,7 +292,7 @@ const Dashboard = () => {
             {/* TablaUltimosMov */}
           </CardShell>
 
-          <CardShell title="Top Categorías / Usuarios" accentColor="#5081A5" sx={{ minHeight: 320 }}>
+          <CardShell title="Top articulos (quiza)" accentColor="#5081A5" sx={{ minHeight: 320 }}>
             {/* ranking/lista */}
           </CardShell>
         </Box>
