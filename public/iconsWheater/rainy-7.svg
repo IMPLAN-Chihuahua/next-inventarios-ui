@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- (c) ammap.com | SVG weather icons -->
-<svg
+<svg width="64" height="64" viewBox="10.67 16.39 42.47 42.47"
     version="1.1"
     xmlns="http://www.w3.org/2000/svg"
     xmlns:xlink="http://www.w3.org/1999/xlink"
-    width="64"
-    height="64"
+   
+   
     viewbox="0 0 64 64">
     <defs>
         <filter id="blur" width="200%" height="200%">

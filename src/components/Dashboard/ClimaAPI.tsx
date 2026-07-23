@@ -107,7 +107,6 @@ export default function ClimaAPI() {
     consultarDatos();
   }, []);
 
-  // capsula — ahora más compacta (altura fija, no min-height "elástico")
   const pillWrapperSx = {
     display: "inline-flex",
     alignItems: "center",
@@ -165,23 +164,27 @@ export default function ClimaAPI() {
           boxShadow: "0 1px 3px rgba(74,153,224,0.35)",
         }}
       >
-        <Box
-          sx={{
-            display: "flex",
-            //mb: 0.5,
-            alignItems: "center",
-            justifyContent: "center",
-            width: 20,
-            height: 20,
-            flexShrink: 0,
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 40,
+          height: 40,
+          flexShrink: 0,
+          mr: 0.75,
+        }}
+      >
+        <img
+          src={`/iconsWheater/${archivoSvg}`}
+          alt={etiqueta}
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "block",
           }}
-        >
-          <img
-            src={`/iconsWheater/${archivoSvg}`}
-            alt={etiqueta}
-            style={{ width: "35px", height: "35px", display: "block" }}
-          />
-        </Box>
+        />
+      </Box>
         <Typography
           sx={{
             fontWeight: 700,
