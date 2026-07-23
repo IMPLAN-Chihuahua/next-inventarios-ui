@@ -114,6 +114,19 @@ export default function BotonesGridAmarillo() {
                 },
               }}
             >
+              
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: "4px",
+                  bgcolor: color,
+                  zIndex: 1,
+                }}
+              />
+
               <Box
                 className="watermark-icon"
                 sx={{
@@ -143,10 +156,10 @@ export default function BotonesGridAmarillo() {
 
               <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", justifyContent: "space-between", p: 2, position: "relative", zIndex: 1 }}>
                 <Box sx={{ position: "relative" }}>
-                  <Typography sx={{ color: "#86868b", fontWeight: 600, fontSize: "0.7rem", letterSpacing: "0.05em", mb: 0.5 }}>
+                  <Typography sx={{ color: "#060606", fontWeight: 600, fontSize: "0.7rem", letterSpacing: "0.05em", mb: 0.5 }}>
                     {step}
                   </Typography>
-                  <Typography sx={{ color: "#467A77", fontWeight: 900, fontSize: "1rem", letterSpacing: "-0.015em", lineHeight: 1.1 }}>
+                  <Typography sx={{ color: "#467A77", fontWeight: 900, fontSize: "1.3rem", letterSpacing: "-0.015em", lineHeight: 1.1 }}>
                     {titulo}
                   </Typography>
                 </Box>
