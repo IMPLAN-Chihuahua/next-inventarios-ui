@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Box, Typography, Button, IconButton, Avatar, Badge } from "@mui/material";
 import {
   ChevronRight,
@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Users,
   CarFront,
-  Bell,s
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -26,7 +26,15 @@ import {
   Cell,
 } from "recharts";
 import ClimaAPI from "./ClimaAPI";
-import BotonesGridAmarillo from "./BotonesGrid"; // Asegura que la ruta coincida con el nombre real de tu archivo
+import BotonesGridAmarillo from "./BotonesGrid";
+
+import ResguardoVehicularDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ResguardoVehicularDrawer";
+import ImprimirEtiquetasDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ImprimirEtiquetasDrawer";
+import DescargarResguardosDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/DescargarResguardosDrawer";
+// import AgregarArticuloDrawer from "@/app/(authenticated)/articulos/components/AgregarArticuloDrawer";
+
+
+
 
 // ============================================================
 // CardShell — shell reutilizable con ícono + color de acento
@@ -172,6 +180,11 @@ const dataUbicacion = [
 // Dashboard
 // ============================================================
 const Dashboard = () => {
+  // 👇 controla cuál drawer está abierto (null = ninguno)
+  const [openDrawer, setOpenDrawer] = useState<string | null>(null);
+
+  const handleClose = () => setOpenDrawer(null);
+
   return (
     <Box
       sx={{
@@ -204,7 +217,7 @@ const Dashboard = () => {
         >
           {/* Componente importado que sustituye a los 4 CardShells previos */}
           <Box sx={{ gridColumn: "1 / 3", gridRow: "1 / 3", width: "100%", height: "100%" }}>
-            <BotonesGridAmarillo />
+            <BotonesGridAmarillo onAction={setOpenDrawer} />
           </Box>
 
           <CardShell
@@ -245,7 +258,7 @@ const Dashboard = () => {
             mb: 2.5,
           }}
         >
-          <CardShell title="Grafica" accentColor="#94B8BA">
+          <CardShell title="exportar excel" accentColor="#94B8BA">
             {/* Placeholder */}
           </CardShell>
 
@@ -297,7 +310,25 @@ const Dashboard = () => {
           </CardShell>
         </Box>
         
-      </Box> 
+      </Box>
+
+      {/* ================= DRAWERS ================= */}
+      <ResguardoVehicularDrawer
+        open={openDrawer === "resguardo-vehicular"}
+        onClose={handleClose}
+      />
+      <ImprimirEtiquetasDrawer
+        open={openDrawer === "imprimir-etiquetas"}
+        onClose={handleClose}
+      />
+      <DescargarResguardosDrawer
+        open={openDrawer === "descargar-resguardos"}
+        onClose={handleClose}
+      />
+      {/* <AgregarArticuloDrawer
+        open={openDrawer === "agregar-articulo"}
+        onClose={handleClose}
+      /> */}
     </Box>
   );
 };
