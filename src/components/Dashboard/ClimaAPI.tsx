@@ -112,8 +112,8 @@ export default function ClimaAPI() {
     alignItems: "center",
     borderRadius: "999px",
     overflow: "hidden",
-    background: "#c3decf",
-    height: 40,
+    background: "#ccddd3",
+    height: 42,
   };
 
   if (cargando) {
@@ -149,64 +149,67 @@ export default function ClimaAPI() {
         },
       }}
     >
-      {/* circulo azul con icono + temperatura + etiqueta */}
+      {/* contenedor claro con icono y textos apilados */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: 0.75,
+          gap: 0.5,
           background: "#eef1f4",   
           borderRadius: "999px",
-          px: 1.75,
+          px: 1.5,
           height: "100%",
           margin: "-1px",
           boxShadow: "0 1px 3px rgba(74,153,224,0.35)",
         }}
       >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 40,
-          height: 40,
-          flexShrink: 0,
-          mr: 0.75,
-        }}
-      >
-        <img
-          src={`/iconsWheater/${archivoSvg}`}
-          alt={etiqueta}
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "block",
-          }}
-        />
-      </Box>
-        <Typography
+        <Box
           sx={{
-            fontWeight: 700,
-            fontSize: "1rem",
-            color: "#3a3a3c",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 34,
+            height: 34,
+            flexShrink: 0,
           }}
         >
-          {`${clima.temperatura} °C`}
-        </Typography>
-        <Typography
-          sx={{
-            fontWeight: 700,
-            fontSize: "1rem",
-            color: "#3a3a3c",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {etiqueta}
-        </Typography>
+          <img
+            src={`/iconsWheater/${archivoSvg}`}
+            alt={etiqueta}
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "block",
+            }}
+          />
+        </Box>
+        
+        {/* Agrupación vertical para temperatura y texto */}
+        <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start" }}>
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: "0.85rem",
+              color: "#3a3a3c",
+              lineHeight: 1.1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {`${clima.temperatura} °C`}
+          </Typography>
+          <Typography
+            sx={{
+              fontWeight: 600,
+              fontSize: "0.7rem",
+              color: "#6e6e73",
+              lineHeight: 1.1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {etiqueta}
+          </Typography>
+        </Box>
       </Box>
 
       {/* solo ciudad */}
@@ -215,15 +218,15 @@ export default function ClimaAPI() {
           display: "flex",
           alignItems: "center",
           pl: 0.5,
-          pr: 2,
+          pr: 1.5,
           height: "100%",
         }}
       >
         <Typography
           sx={{
             fontWeight: 900,
-            fontSize: "1rem",
-            color: "rgb(255, 255, 255)",
+            fontSize: "0.78rem",
+            color: "#47584e",
             whiteSpace: "nowrap",
           }}
         >
