@@ -7,7 +7,7 @@ import { ArrowRight } from "lucide-react";
 interface AccionRapida {
   step: string;
   titulo: string;
-  color: string;
+  color: string;s
   lordIconSrc: string;
   onClick?: () => void;
 }

@@ -25,7 +25,7 @@ export const DashboardHeader = () => {
     >
       {/* Títulos */}
       <Box>
-        <Typography variant="h5" sx={{ color: "#1d1d1f", fontWeight: 700, letterSpacing: "-0.02em", fontfamily: "system-ui, -apple-system, sans-serif"}}>
+        <Typography variant="h5" sx={{ color: "#1d1d1f", fontWeight: 700, letterSpacing: "-0.02em", fontfamily: s"system-ui, -apple-system, sans-serif"}}>
           Sistema de Inventarios
         </Typography>
       </Box>
