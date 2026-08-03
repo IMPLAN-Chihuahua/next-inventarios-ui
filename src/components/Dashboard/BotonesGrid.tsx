@@ -5,33 +5,37 @@ import { Box, ButtonBase, Typography } from "@mui/material";
 import { ArrowRight } from "lucide-react";
 
 interface AccionRapida {
+  id: string; 
   step: string;
   titulo: string;
-  color: string;s
+  color: string;
   lordIconSrc: string;
-  onClick?: () => void;
 }
 
 const acciones: AccionRapida[] = [
   {
+    id: "resguardo-vehicular",
     step: "Resguardo",
     titulo: "Vehicular",
     color: "#94B8BA",
     lordIconSrc: "https://cdn.lordicon.com/byupthur.json",
   },
   {
+    id: "imprimir-etiquetas",
     step: "Imprimir",
     titulo: "Etiquetas QR",
     color: "#94B8BA",
     lordIconSrc: "https://cdn.lordicon.com/ggnoyhfp.json",
   },
   {
+    id: "descargar-resguardos",
     step: "Descargar",
     titulo: "Resguardos",
     color: "#94B8BA",
     lordIconSrc: "https://cdn.lordicon.com/tsrgicte.json",
   },
   {
+    id: "agregar-articulo",
     step: "Agregar",
     titulo: "Artículos",
     color: "#94B8BA",
@@ -47,7 +51,11 @@ const hexToRgb = (hex: string) => {
   return `${(bigint >> 16) & 255}, ${(bigint >> 8) & 255}, ${bigint & 255}`;
 };
 
-export default function BotonesGridAmarillo() {
+interface BotonesGridAmarilloProps {
+  onAction: (id: string) => void; 
+}
+
+export default function BotonesGridAmarillo({ onAction }: BotonesGridAmarilloProps) {
   const lordIconRefs = useRef<Record<string, any>>({});
 
   useEffect(() => {
@@ -68,7 +76,7 @@ export default function BotonesGridAmarillo() {
 
   const resetIcon = (titulo: string) => {
     const el = lordIconRefs.current[titulo];
-    el?.playerInstance?.stop(); 
+    el?.playerInstance?.stop();
   };
 
   return (
@@ -79,16 +87,16 @@ export default function BotonesGridAmarillo() {
           gridTemplateColumns: { xs: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" },
           gap: 2.5,
           width: "100%",
-          height: "100%"
+          height: "100%",
         }}
       >
-        {acciones.map(({ step, titulo, color, lordIconSrc, onClick }) => {
+        {acciones.map(({ id, step, titulo, color, lordIconSrc }) => {
           const rgb = hexToRgb(color);
 
           return (
             <ButtonBase
-              key={titulo}
-              onClick={onClick}
+              key={id}
+              onClick={() => onAction(id)} // 👈 dispara el id, nada más
               onMouseEnter={() => playIcon(titulo)}
               onMouseLeave={() => resetIcon(titulo)}
               sx={{
@@ -114,7 +122,6 @@ export default function BotonesGridAmarillo() {
                 },
               }}
             >
-              
               <Box
                 sx={{
                   position: "absolute",
@@ -131,9 +138,9 @@ export default function BotonesGridAmarillo() {
                 className="watermark-icon"
                 sx={{
                   position: "absolute",
-                  right: 3, 
+                  right: 3,
                   bottom: -8,
-                  opacity: 0.3, 
+                  opacity: 0.3,
                   pointerEvents: "none",
                   zIndex: 0,
                   transition: "opacity 0.4s ease",
@@ -147,10 +154,10 @@ export default function BotonesGridAmarillo() {
                     lordIconRefs.current[titulo] = el;
                   },
                   src: lordIconSrc,
-                  delay: "2000",
+                  delay: "-10",
                   stroke: "bold",
                   colors: "primary:#121331,secondary:#467a77",
-                  style: { width: "120px", height: "120px", pointerEvents: "auto" },
+                  style: { width: "90px", height: "90px", pointerEvents: "auto" },
                 })}
               </Box>
 
