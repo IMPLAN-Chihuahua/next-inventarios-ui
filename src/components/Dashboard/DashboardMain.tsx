@@ -1,32 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, Typography, Button, IconButton, Avatar, Badge } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import {
-  ChevronRight,
-  Package,
-  ShieldCheck,
-  Users,
-  CarFront,
-  Bell,
   type LucideIcon,
 } from "lucide-react";
 import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
   Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
   PieChart,
   Pie,
   Cell,
 } from "recharts";
 import ClimaAPI from "./ClimaAPI";
 import BotonesGridAmarillo from "./BotonesGrid";
+import TablaUltimosMov from "./TablaUltimosMov";
 
 import ResguardoVehicularDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ResguardoVehicularDrawer";
 import ImprimirEtiquetasDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ImprimirEtiquetasDrawer";
@@ -150,16 +138,6 @@ const KpiContent = ({ value, trend, trendUp, caption }: KpiContentProps) => (
 // ============================================================
 // Datos de ejemplo para gráficas
 // ============================================================
-const dataMovimientos = [
-  { mes: "Ene", entradas: 40, salidas: 24 },
-  { mes: "Feb", entradas: 30, salidas: 18 },
-  { mes: "Mar", entradas: 55, salidas: 32 },
-  { mes: "Abr", entradas: 45, salidas: 28 },
-  { mes: "May", entradas: 60, salidas: 35 },
-  { mes: "Jun", entradas: 50, salidas: 30 },
-  { mes: "Jul", entradas: 70, salidas: 40 },
-];
-
 const dataCategorias = [
   { name: "Mobiliario", value: 45 },
   { name: "Electrónicos", value: 30 },
@@ -220,32 +198,9 @@ const Dashboard = () => {
             <BotonesGridAmarillo onAction={setOpenDrawer} />
           </Box>
 
-          <CardShell
-            title="Movimiento de Inventario Mensual"
-            accentColor="#5081A5"
-            sx={{ gridColumn: "3", gridRow: "1 / 3" }}
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={dataMovimientos} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5081A5" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#5081A5" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorSalidas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#467A77" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#467A77" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="mes" tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Area type="monotone" dataKey="entradas" stroke="#5081A5" fill="url(#colorEntradas)" strokeWidth={2} />
-                <Area type="monotone" dataKey="salidas" stroke="#467A77" fill="url(#colorSalidas)" strokeWidth={2} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardShell>
+          <Box sx={{ gridColumn: "3", gridRow: "1 / 3", minWidth: 0 }}>
+            <TablaUltimosMov />
+          </Box>
         </Box>
 
         {/* ================= FILA 2: 3 cards de análisis ================= */}
@@ -299,12 +254,8 @@ const Dashboard = () => {
           </CardShell>
         </Box>
 
-        {/* ================= FILA 3: Tablas ================= */}
-        <Box sx={{ display: "grid", gridTemplateColumns: "2.2fr 1fr", gap: 2.5 }}>
-          <CardShell title="Últimos Movimientos" accentColor="#467A77" sx={{ minHeight: 320 }}>
-            {/* TablaUltimosMov */}
-          </CardShell>
-
+        {/* ================= FILA 3 ================= */}
+        <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 2.5 }}>
           <CardShell title="Top articulos (quiza)" accentColor="#5081A5" sx={{ minHeight: 320 }}>
             {/* ranking/lista */}
           </CardShell>

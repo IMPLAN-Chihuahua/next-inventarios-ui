@@ -1,321 +1,227 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from "react";
-import { Box, Typography, Avatar, Chip, CircularProgress } from "@mui/material";
-import NorthEastIcon from "@mui/icons-material/NorthEast";
+import { useEffect, useState } from "react";
+import { Alert, Box, Chip, CircularProgress, Typography } from "@mui/material";
+import { inventariosApi } from "@/src/services/axios";
 
-// ---- Tipos ----
-type TipoMovimiento = "Entrada" | "Salida" | "Resguardo";
+type TipoMovimiento = "Alta" | "Actualización" | "Resguardo" | "Categoría" | "Usuario";
+
+interface ValorHistorico {
+  descripcion?: string;
+  numeroInventario?: string;
+  tipo?: string;
+  nombre?: string;
+  resguardante?: string | { _id?: string; nombre?: string };
+  fechaAlta?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface HistoricoApi {
+  _id: string;
+  usuario?: string | { _id: string; nombre: string };
+  accion: "CREATE" | "UPDATE";
+  modelo: "Articulo" | "Usuario" | "Categoria";
+  valorAntiguo?: ValorHistorico | ValorHistorico[];
+  valorNuevo: ValorHistorico | ValorHistorico[];
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 interface Movimiento {
   id: string;
-  articulo: string;
+  tipo: TipoMovimiento;
+  descripcion: string;
   responsable: string;
-  categoria: string;
-  tipoMov: TipoMovimiento;
-  fecha: string;
-  iniciales: string;
-  avatarColor: string;
-  avatarTextColor: string;
+  fecha?: string;
 }
 
-//  Configuración visual por tipo de movimiento 
-const tipoConfig: Record<
-  TipoMovimiento,
-  { bg: string; color: string; dot: string }
-> = {
-  Entrada: { bg: "#dcfce7", color: "#16a34a", dot: "#22c55e" },
-  Resguardo: { bg: "#fef3c7", color: "#d97706", dot: "#f59e0b" },
-  Salida: { bg: "#fee2e2", color: "#dc2626", dot: "#ef4444" },
+const tipoConfig: Record<TipoMovimiento, { fondo: string; texto: string }> = {
+  Alta: { fondo: "#dcfce7", texto: "#15803d" },
+  Actualización: { fondo: "#dbeafe", texto: "#1d4ed8" },
+  Resguardo: { fondo: "#fef3c7", texto: "#b45309" },
+  Categoría: { fondo: "#ede9fe", texto: "#6d28d9" },
+  Usuario: { fondo: "#f3f4f6", texto: "#4b5563" },
 };
 
-//  Funciones Auxiliares 
-const obtenerIniciales = (nombre: string): string => {
-  if (!nombre) return "--";
-  const palabras = nombre.trim().split(" ");
-  if (palabras.length === 1) return palabras[0].substring(0, 2).toUpperCase();
-  return (palabras[0][0] + palabras[1][0]).toUpperCase();
+const primerValor = (valor: ValorHistorico | ValorHistorico[] | undefined) =>
+  Array.isArray(valor) ? valor[0] : valor;
+
+const esResguardo = (historico: HistoricoApi) => {
+  if (historico.modelo !== "Articulo" || historico.accion !== "UPDATE") return false;
+  const anterior = primerValor(historico.valorAntiguo);
+  const nuevo = primerValor(historico.valorNuevo);
+  const resguardanteAnterior =
+    typeof anterior?.resguardante === "object" ? anterior.resguardante._id : anterior?.resguardante;
+  const resguardanteNuevo =
+    typeof nuevo?.resguardante === "object" ? nuevo.resguardante._id : nuevo?.resguardante;
+  return Boolean(resguardanteNuevo && resguardanteNuevo !== resguardanteAnterior);
 };
 
-const formatearFecha = (fechaISO: string): string => {
-  if (!fechaISO) return "Sin fecha";
-  const fecha = new Date(fechaISO);
-  return fecha.toLocaleDateString("es-MX", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+const obtenerTipo = (historico: HistoricoApi): TipoMovimiento => {
+  if (historico.modelo === "Categoria") return "Categoría";
+  if (historico.modelo === "Usuario") return "Usuario";
+  if (historico.accion === "CREATE") return "Alta";
+  if (esResguardo(historico)) return "Resguardo";
+  return "Actualización";
 };
 
-const mapearEstadoATipo = (estadoBack: string): TipoMovimiento => {
-  switch (estadoBack) {
-    case "Asignado":
-      return "Resguardo";
-    case "Baja":
-    case "Donado":
-      return "Salida";
-    case "Dictaminer":
-    case "Dictaminado":
-    default:
-      return "Entrada";
+const obtenerDescripcion = (historico: HistoricoApi) => {
+  const valor = primerValor(historico.valorNuevo);
+  const cantidad = Array.isArray(historico.valorNuevo) ? historico.valorNuevo.length : 1;
+
+  if (historico.modelo === "Categoria") {
+    return (historico.accion === "CREATE" ? "Se agregó" : "Se actualizó") +
+      " la categoría " + (valor?.tipo ?? "sin nombre");
   }
+  if (historico.modelo === "Usuario") {
+    return (historico.accion === "CREATE" ? "Se agregó" : "Se actualizó") +
+      " el usuario " + (valor?.nombre ?? "sin nombre");
+  }
+  if (esResguardo(historico)) {
+    return cantidad > 1
+      ? "Se resguardaron " + cantidad + " artículos"
+      : "Se resguardó " + (valor?.descripcion ?? valor?.numeroInventario ?? "un artículo");
+  }
+  return (historico.accion === "CREATE" ? "Se agregó " : "Se actualizó ") +
+    (valor?.descripcion ?? valor?.numeroInventario ?? "un artículo");
 };
 
-const TablaUltimosMov = () => {
+const obtenerFecha = (historico: HistoricoApi) => {
+  const valor = primerValor(historico.valorNuevo);
+  return historico.createdAt ?? historico.updatedAt ?? valor?.updatedAt ??
+    valor?.createdAt ?? valor?.fechaAlta;
+};
+
+const formatearFecha = (fecha?: string) => {
+  if (!fecha) return "Fecha no disponible";
+  const valor = new Date(fecha);
+  if (Number.isNaN(valor.getTime())) return "Fecha no disponible";
+  return new Intl.DateTimeFormat("es-MX", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(valor);
+};
+
+export default function TablaUltimosMov() {
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
-  const [cargando, setCargando] = useState<boolean>(true);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const obtenerArticulos = async () => {
-      try {
-        // Se puede agregar un query param como ?limit=5 para obtener solo los últimos
-       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}`);
-        
-        if (!response.ok) {
-          throw new Error("Error en la respuesta del servidor");
-        }
-        
-        // El backend devuelve { pagination: {...}, data: [...] }
-        const dataAPI = await response.json();
-        const listaArticulos = dataAPI.data || [];
-        
-        // Transformar el arreglo del backend a la interfaz del frontend
-        const datosMapeados: Movimiento[] = listaArticulos.map((item: any) => {
-          const nombreResponsable = item.resguardante?.nombre || "Sin Asignar";
-          
-          return {
-            id: item._id,
-            articulo: item.descripcion || "Artículo sin descripción",
-            responsable: nombreResponsable,
-            categoria: item.categoria?.tipo || "Sin Categoria", 
-            tipoMov: mapearEstadoATipo(item.estado),
-            fecha: formatearFecha(item.fechaAlta),
-            iniciales: obtenerIniciales(nombreResponsable),
-            avatarColor: "#f3f4f6",     
-            avatarTextColor: "#4b5563", 
-          };
-        });
+    let activo = true;
 
-        setMovimientos(datosMapeados);
+    const cargarMovimientos = async () => {
+      try {
+        const { data } = await inventariosApi.get<{ data: HistoricoApi[] }>(
+          "/historicos?limit=5&page=1",
+        );
+        if (!activo) return;
+
+        setMovimientos((data.data ?? []).map((historico) => ({
+          id: historico._id,
+          tipo: obtenerTipo(historico),
+          descripcion: obtenerDescripcion(historico),
+          responsable:
+            typeof historico.usuario === "object"
+              ? historico.usuario.nombre
+              : "Usuario del sistema",
+          fecha: obtenerFecha(historico),
+        })));
       } catch (error) {
-        console.error("Hubo un error al obtener los artículos:", error);
+        console.error("No fue posible cargar los últimos movimientos", error);
+        if (activo) setError(true);
       } finally {
-        setCargando(false);
+        if (activo) setCargando(false);
       }
     };
 
-    obtenerArticulos();
+    cargarMovimientos();
+    return () => {
+      activo = false;
+    };
   }, []);
 
   return (
     <Box
       sx={{
-        backgroundColor: "#ffffff",
-        borderRadius: 4,
-        p: 4,
-        width: "100%",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        height: "100%",
+        minHeight: 0,
+        bgcolor: "#fff",
+        border: "1px solid #eef0f2",
+        borderLeft: "4px solid #467A77",
+        borderRadius: "14px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+        px: 2.25,
+        py: 2,
+        overflow: "hidden",
       }}
     >
-      {/* Encabezado */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 700, color: "#111827" }}
-          >
-            Últimos Movimientos
-          </Typography>
-          <Typography sx={{ color: "#6b7280", fontSize: "0.9rem" }}>
-            Actividad reciente del inventario
-          </Typography>
-        </Box>
+      <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#1d1d1f" }}>
+        Últimos Movimientos
+      </Typography>
+      <Typography sx={{ color: "#9ca3af", fontSize: "0.75rem", mb: 1.25 }}>
+        Actividad reciente del inventario
+      </Typography>
 
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 0.5,
-            cursor: "pointer",
-            mt: 0.5,
-            "&:hover .ver-historial-texto": {
-              color: "#c06a2c",
-            },
-            "&:hover .ver-historial-flecha": {
-              transform: "translate(2px, -2px)",
-            },
-          }}
-        >
-          <Typography
-            className="ver-historial-texto"
-            sx={{
-              color: "#d9843f",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              transition: "color 0.2s ease",
-            }}
-          >
-            Ver historial
-          </Typography>
-          <NorthEastIcon
-            className="ver-historial-flecha"
-            sx={{
-              fontSize: 16,
-              color: "#d9843f",
-              transition: "transform 0.2s ease",
-            }}
-          />
-        </Box>
-      </Box>
-
-      {/* Encabezado de columnas */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "1fr 160px 140px",
-          alignItems: "center",
-          columnGap: 3,
-          pb: 1.5,
-          pl: "60px",
-          borderBottom: "1px solid #e5e7eb",
-        }}
-      >
-        <Typography
-          sx={{
-            color: "#9ca3af",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-          }}
-        >
-          ARTÍCULO
-        </Typography>
-
-        <Typography
-          sx={{
-            color: "#9ca3af",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-          }}
-        >
-          TIPO
-        </Typography>
-
-        <Typography
-          sx={{
-            color: "#9ca3af",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-            textAlign: "right",
-          }}
-        >
-          FECHA
-        </Typography>
-      </Box>
-
-      {/* Control de estado de carga */}
       {cargando ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-          <CircularProgress sx={{ color: "#d9843f" }} />
+        <Box sx={{ display: "grid", placeItems: "center", height: 190 }}>
+          <CircularProgress size={28} sx={{ color: "#467A77" }} />
         </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mt: 3 }}>
+          No fue posible cargar los movimientos.
+        </Alert>
       ) : movimientos.length === 0 ? (
-        <Typography sx={{ textAlign: "center", py: 4, color: "#6b7280" }}>
-          No hay artículos registrados.
+        <Typography sx={{ color: "#6b7280", fontSize: "0.85rem", py: 6, textAlign: "center" }}>
+          Aún no hay movimientos registrados.
         </Typography>
       ) : (
-        /* Filas */
-        movimientos.map((mov) => {
-          const config = tipoConfig[mov.tipoMov] || tipoConfig.Entrada;
-          return (
-            <Box
-              key={mov.id}
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "1fr 160px 140px",
-                alignItems: "center",
-                columnGap: 3,
-                py: 2.5,
-                px: 1.5,
-                mx: -1.5,
-                borderRadius: 2,
-                borderBottom: "1px solid #f3f4f6",
-                transition: "background-color 0.2s ease, transform 0.2s ease",
-                "&:last-of-type": { borderBottom: "none" },
-                "&:hover": {
-                  backgroundColor: config.bg,
-                  transform: "translateX(2px)",
-                },
-              }}
-            >
-              {/* Avatar + articulo */}
-              <Box sx={{ display: "flex", flexDirection: "row", gap: 2, alignItems: "center" }}>
-                <Avatar
-                  sx={{
-                    bgcolor: mov.avatarColor,
-                    color: mov.avatarTextColor,
-                    fontWeight: 700,
-                    width: 44,
-                    height: 44,
-                    fontSize: "0.9rem",
-                    flexShrink: 0,
-                  }}
-                >
-                  {mov.iniciales}
-                </Avatar>
-                <Box>
-                  <Typography sx={{ fontWeight: 600, color: "#111827" }}>
-                    {mov.articulo}
+        <Box>
+          {movimientos.map((movimiento) => {
+            const config = tipoConfig[movimiento.tipo];
+            return (
+              <Box
+                key={movimiento.id}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) auto",
+                  gap: 1,
+                  alignItems: "center",
+                  py: 1,
+                  borderTop: "1px solid #f1f3f5",
+                }}
+              >
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    noWrap
+                    title={movimiento.descripcion}
+                    sx={{ fontSize: "0.79rem", fontWeight: 600, color: "#1f2937" }}
+                  >
+                    {movimiento.descripcion}
                   </Typography>
-                  <Typography sx={{ color: "#6b7280", fontSize: "0.875rem" }}>
-                    {mov.responsable} · {mov.categoria}
+                  <Typography noWrap sx={{ color: "#9ca3af", fontSize: "0.69rem" }}>
+                    {movimiento.responsable} · {formatearFecha(movimiento.fecha)}
                   </Typography>
                 </Box>
-              </Box>
-
-              {/* Tipo */}
-              <Box>
                 <Chip
-                  label={mov.tipoMov}
+                  label={movimiento.tipo}
+                  size="small"
                   sx={{
-                    backgroundColor: config.bg,
-                    color: config.color,
-                    fontWeight: 600,
-                    "& .MuiChip-label": { px: 1 },
+                    height: 22,
+                    bgcolor: config.fondo,
+                    color: config.texto,
+                    fontSize: "0.66rem",
+                    fontWeight: 700,
                   }}
-                  icon={
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        backgroundColor: config.dot,
-                        ml: 1.5,
-                      }}
-                    />
-                  }
                 />
               </Box>
-
-              {/* Fecha */}
-              <Typography sx={{ color: "#6b7280", fontSize: "0.875rem", textAlign: "right" }}>
-                {mov.fecha}
-              </Typography>
-            </Box>
-          );
-        })
+            );
+          })}
+        </Box>
       )}
     </Box>
   );
-};
-
-export default TablaUltimosMov;
+}
