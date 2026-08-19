@@ -5,16 +5,9 @@ import { Box, Typography } from "@mui/material";
 import {
   type LucideIcon,
 } from "lucide-react";
-import {
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import ClimaAPI from "./ClimaAPI";
 import BotonesGridAmarillo from "./BotonesGrid";
 import TablaUltimosMov from "./TablaUltimosMov";
+import DistribucionEstado from "./DistribucionEstado";
 
 import ResguardoVehicularDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ResguardoVehicularDrawer";
 import ImprimirEtiquetasDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ImprimirEtiquetasDrawer";
@@ -106,55 +99,6 @@ const CardShell = ({
 };
 
 // ============================================================
-// KpiContent — número grande + tendencia (para las 4 KPI cards)
-// ============================================================
-interface KpiContentProps {
-  value: string;
-  trend: string;
-  trendUp: boolean;
-  caption: string;
-}
-
-const KpiContent = ({ value, trend, trendUp, caption }: KpiContentProps) => (
-  <Box sx={{ display: "flex", flexDirection: "column", justifyContent: "center", flex: 1 }}>
-    <Typography sx={{ fontSize: "2rem", fontWeight: 700, color: "#1d1d1f", lineHeight: 1.1 }}>
-      {value}
-    </Typography>
-    <Box sx={{ display: "flex", alignItems: "center", gap: 0.7, mt: 0.8 }}>
-      <Typography
-        sx={{
-          fontSize: "0.8rem",
-          fontWeight: 700,
-          color: trendUp ? "#16a34a" : "#dc2626",
-        }}
-      >
-        {trendUp ? "▲" : "▼"} {trend}
-      </Typography>
-      <Typography sx={{ fontSize: "0.8rem", color: "#9ca3af" }}>{caption}</Typography>
-    </Box>
-  </Box>
-);
-
-// ============================================================
-// Datos de ejemplo para gráficas
-// ============================================================
-const dataCategorias = [
-  { name: "Mobiliario", value: 45 },
-  { name: "Electrónicos", value: 30 },
-  { name: "Oficina", value: 15 },
-  { name: "Otros", value: 10 },
-];
-
-const COLORES_DONUT = ["#5081A5", "#467A77", "#94B8BA", "#A2B5C6"];
-
-const dataUbicacion = [
-  { ubicacion: "Matriz", total: 320 },
-  { ubicacion: "Sucursal Norte", total: 210 },
-  { ubicacion: "Sucursal Sur", total: 150 },
-  { ubicacion: "Almacén", total: 90 },
-];
-
-// ============================================================
 // Dashboard
 // ============================================================
 const Dashboard = () => {
@@ -217,25 +161,8 @@ const Dashboard = () => {
             {/* Placeholder */}
           </CardShell>
 
-          <CardShell title="Grafica" accentColor="#5081A5">
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={dataCategorias}
-                    dataKey="value"
-                    innerRadius={55}
-                    outerRadius={80}
-                    paddingAngle={3}
-                  >
-                    {dataCategorias.map((entry, index) => (
-                      <Cell key={entry.name} fill={COLORES_DONUT[index % COLORES_DONUT.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
+          <CardShell title="Distribución por estado" accentColor="#5081A5">
+            <DistribucionEstado />
           </CardShell>
 
           <CardShell title="Categorias" accentColor="#467A77">
