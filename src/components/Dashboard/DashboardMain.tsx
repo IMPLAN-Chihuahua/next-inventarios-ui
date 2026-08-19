@@ -3,11 +3,13 @@
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
 import {
+  FileSpreadsheet,
   type LucideIcon,
 } from "lucide-react";
 import BotonesGridAmarillo from "./BotonesGrid";
 import TablaUltimosMov from "./TablaUltimosMov";
 import DistribucionEstado from "./DistribucionEstado";
+import ImportarExcel from "./ImportarExcel";
 
 import ResguardoVehicularDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ResguardoVehicularDrawer";
 import ImprimirEtiquetasDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ImprimirEtiquetasDrawer";
@@ -104,6 +106,7 @@ const CardShell = ({
 const Dashboard = () => {
   // 👇 controla cuál drawer está abierto (null = ninguno)
   const [openDrawer, setOpenDrawer] = useState<string | null>(null);
+  const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
 
   const handleClose = () => setOpenDrawer(null);
 
@@ -143,7 +146,7 @@ const Dashboard = () => {
           </Box>
 
           <Box sx={{ gridColumn: "3", gridRow: "1 / 3", minWidth: 0 }}>
-            <TablaUltimosMov />
+            <TablaUltimosMov key={`ultimos-${dashboardRefreshKey}`} />
           </Box>
         </Box>
 
@@ -157,12 +160,12 @@ const Dashboard = () => {
             mb: 2.5,
           }}
         >
-          <CardShell title="exportar excel" accentColor="#94B8BA">
-            {/* Placeholder */}
+          <CardShell title="Importar Excel" icon={FileSpreadsheet} accentColor="#94B8BA">
+            <ImportarExcel onImported={() => setDashboardRefreshKey((current) => current + 1)} />
           </CardShell>
 
           <CardShell title="Distribución por estado" accentColor="#5081A5">
-            <DistribucionEstado />
+            <DistribucionEstado key={`estados-${dashboardRefreshKey}`} />
           </CardShell>
 
           <CardShell title="Categorias" accentColor="#467A77">
