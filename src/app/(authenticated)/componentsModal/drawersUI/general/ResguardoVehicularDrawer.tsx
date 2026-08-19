@@ -1,12 +1,171 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Box, TextField, Button, MenuItem } from "@mui/material";
-import CenteredDrawer from "../CenteredDrawer";
+import { useState, useEffect, useCallback } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  MenuItem,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
+import DirectionsCarRoundedIcon from "@mui/icons-material/DirectionsCarRounded";
+import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
+import NotesRoundedIcon from "@mui/icons-material/NotesRounded";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
+import LocalGasStationRoundedIcon from "@mui/icons-material/LocalGasStationRounded";
+import ElectricBoltRoundedIcon from "@mui/icons-material/ElectricBoltRounded";
+import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
+import CenteredDrawer, {
+  DrawerSectionTitle,
+  drawerDropdownMenuProps,
+  drawerFieldStyles,
+  drawerPrimaryButtonStyles,
+  drawerSecondaryButtonStyles,
+} from "../CenteredDrawer";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+}
+
+interface Vehiculo {
+  id?: string;
+  _id?: string;
+  descripcion?: string;
+  nombre?: string;
+  numeroInventario?: string;
+  noSerie?: string;
+}
+
+interface Usuario {
+  id?: string;
+  _id?: string;
+  nombre?: string;
+  correo?: string;
+}
+
+const CATEGORIA_TRANSPORTE_ID = "0c63012a-e7a2-4239-b7ff-4c17fe9b38dc";
+
+const obtenerTipoCarga = (vehiculo?: Vehiculo) => {
+  if (!vehiculo) return "";
+
+  const descripcion = `${vehiculo.descripcion || ""} ${vehiculo.nombre || ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
+  if (descripcion.includes("BICICLETA")) return "No aplica";
+
+  if (
+    descripcion.includes("ELECTRIC") ||
+    descripcion.includes("PATIN") ||
+    descripcion.includes("SCOOTER")
+  ) {
+    return "Eléctrico";
+  }
+
+  return "Gasolina";
+};
+
+function LevelGauge({
+  name,
+  label,
+  value,
+  color,
+  maxValue,
+  unit,
+  unitLabel,
+  onChange,
+}: {
+  name: "gasolinaInicial" | "gasolinaFinal" | "cargaInicial" | "cargaFinal";
+  label: string;
+  value: string;
+  color: string;
+  maxValue: number;
+  unit: "lt" | "%";
+  unitLabel: string;
+  onChange: React.ChangeEventHandler<HTMLInputElement>;
+}) {
+  const numericValue = Number(value) || 0;
+  const progress = Math.min(Math.max((numericValue / maxValue) * 100, 0), 100);
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+        minWidth: 0,
+        p: 1.5,
+        border: "1px solid #e2e9e9",
+        borderRadius: "14px",
+        bgcolor: "#ffffff",
+      }}
+    >
+      <Box sx={{ position: "relative", width: 76, height: 76, flexShrink: 0 }}>
+        <CircularProgress
+          variant="determinate"
+          value={100}
+          size={76}
+          thickness={5}
+          sx={{ position: "absolute", inset: 0, color: "#e8eeee" }}
+        />
+        <CircularProgress
+          variant="determinate"
+          value={progress}
+          size={76}
+          thickness={5}
+          sx={{
+            position: "absolute",
+            inset: 0,
+            color,
+            transition: "color 180ms ease",
+            "& .MuiCircularProgress-circle": {
+              strokeLinecap: "round",
+              transition: "stroke-dashoffset 300ms ease",
+            },
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+          }}
+        >
+          <Typography sx={{ color: "#263638", fontWeight: 800, fontSize: "1rem", lineHeight: 1 }}>
+            {numericValue}
+          </Typography>
+          <Typography sx={{ color: "#7b898c", fontWeight: 650, fontSize: "0.64rem", mt: 0.3 }}>
+            {unitLabel}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ color: "#354447", fontSize: "0.78rem", fontWeight: 750, mb: 1 }}>
+          {label}
+        </Typography>
+        <TextField
+          name={name}
+          type="number"
+          value={value}
+          onChange={onChange}
+          fullWidth
+          size="small"
+          sx={drawerFieldStyles}
+          slotProps={{ htmlInput: { min: 0, max: maxValue }, input: { endAdornment: unit } }}
+        />
+        <Typography sx={{ color: "#96a1a3", fontSize: "0.64rem", mt: 0.7 }}>
+          Indicador visual sobre {maxValue} {unit}
+        </Typography>
+      </Box>
+    </Box>
+  );
 }
 
 export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
@@ -18,25 +177,23 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     vehiculo: "",
     serie: "",
     cargaGasolinaElectrica: "",
-    kilometraje: "",
+    cargaInicial: "",
+    cargaFinal: "",
+    gasolinaInicial: "",
+    gasolinaFinal: "",
+    kilometrajeInicial: "",
+    kilometrajeFinal: "",
     resguardante: "", 
     comentarios: ""
   });
 
-  const [vehiculos, setVehiculos] = useState<any[]>([]);
-  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loadingCarga, setLoadingCarga] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      cargarDatos();
-    }
-  }, [open]);
-  const CATEGORIA_TRANSPORTE_ID = "0c63012a-e7a2-4239-b7ff-4c17fe9b38dc";
-
-
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
+    await Promise.resolve();
     setLoadingCarga(true);
     try {
       const [resVehiculos, resUsuarios] = await Promise.all([
@@ -70,7 +227,17 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     } finally {
       setLoadingCarga(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const cargaInicial = window.setTimeout(() => {
+      void cargarDatos();
+    }, 0);
+
+    return () => window.clearTimeout(cargaInicial);
+  }, [open, cargarDatos]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -87,6 +254,13 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
       articuloId: selectedId,
       numeroInventario: vehiculoSeleccionado?.numeroInventario || "",
       serie: vehiculoSeleccionado?.noSerie || "",
+      cargaGasolinaElectrica: obtenerTipoCarga(vehiculoSeleccionado),
+      cargaInicial: "",
+      cargaFinal: "",
+      gasolinaInicial: "",
+      gasolinaFinal: "",
+      kilometrajeInicial: "",
+      kilometrajeFinal: "",
     });
   };
 
@@ -102,17 +276,27 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
 
     setLoadingSubmit(true);
     try {
-      const payload: Record<string, any> = { ...formData };
+      const payload: Record<string, unknown> = { ...formData };
       
       const { articuloId } = payload;
       delete payload.articuloId;
+      delete payload.cargaGasolinaElectrica;
 
       if (!payload.fecha) delete payload.fecha;
-      if (payload.kilometraje) {
-         payload.kilometraje = Number(payload.kilometraje);
-      } else {
-         delete payload.kilometraje;
-      }
+      [
+        "cargaInicial",
+        "cargaFinal",
+        "gasolinaInicial",
+        "gasolinaFinal",
+        "kilometrajeInicial",
+        "kilometrajeFinal",
+      ].forEach((campo) => {
+        if (payload[campo] === "") {
+          delete payload[campo];
+        } else if (payload[campo] !== undefined) {
+          payload[campo] = Number(payload[campo]);
+        }
+      });
 
       const response = await fetch(`/api/v1/resguardos/vehiculo/${articuloId}/resguardo/download`, {
         method: "POST",
@@ -147,125 +331,367 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     }
   };
 
+  const actions = (
+    <>
+      <Button
+        variant="text"
+        onClick={onClose}
+        disabled={loadingSubmit}
+        sx={drawerSecondaryButtonStyles}
+      >
+        Cancelar
+      </Button>
+      <Button
+        variant="contained"
+        onClick={handleSubmit}
+        disabled={loadingSubmit || loadingCarga}
+        startIcon={loadingSubmit ? <CircularProgress size={16} color="inherit" /> : <DownloadRoundedIcon />}
+        sx={drawerPrimaryButtonStyles}
+      >
+        {loadingSubmit ? "Generando resguardo..." : "Guardar y descargar"}
+      </Button>
+    </>
+  );
+
   return (
-    <CenteredDrawer open={open} onClose={onClose} title="Resguardo Vehicular">
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        
-        <TextField
-          select
-          name="articuloId"
-          label="Selecciona el Vehículo"
-          value={formData.articuloId}
-          onChange={handleVehiculoChange}
-          fullWidth
-          required
-          disabled={loadingCarga}
+    <CenteredDrawer
+      open={open}
+      onClose={onClose}
+      title="Nuevo resguardo vehicular"
+      subtitle="Registra los datos del vehículo y de la persona responsable para generar el documento."
+      icon={<DirectionsCarRoundedIcon />}
+      actions={actions}
+      size="wide"
+    >
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "minmax(0, 2.1fr) minmax(300px, 0.9fr)" },
+          gap: 2,
+          alignItems: "stretch",
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(3, minmax(0, 1fr))" },
+            alignContent: "start",
+            gap: 1.5,
+            p: 2,
+            border: "1px solid #e3e9ea",
+            borderRadius: "16px",
+            bgcolor: "#fbfcfc",
+          }}
         >
-          {vehiculos.length > 0 ? (
-            vehiculos.map((vehiculo: any) => (
-              <MenuItem key={vehiculo.id || vehiculo._id} value={vehiculo.id || vehiculo._id}>
-                {vehiculo.descripcion || vehiculo.nombre || "Vehículo sin descripción"} ({vehiculo.numeroInventario || "Sin inventario"})
+          <DrawerSectionTitle
+            icon={<DirectionsCarRoundedIcon fontSize="small" />}
+            title="Datos del vehículo"
+            description="Selecciona la unidad y completa la información del documento."
+          />
+
+          <TextField
+            select
+            name="articuloId"
+            label="Vehículo"
+            value={formData.articuloId}
+            onChange={handleVehiculoChange}
+            fullWidth
+            required
+            disabled={loadingCarga}
+            sx={{ ...drawerFieldStyles, gridColumn: { xs: "auto", sm: "span 2" } }}
+            slotProps={{
+              select: {
+                MenuProps: drawerDropdownMenuProps,
+                renderValue: (value) => {
+                  const vehiculo = vehiculos.find((item) => (item.id || item._id) === value);
+                  return vehiculo
+                    ? `${vehiculo.descripcion || vehiculo.nombre || "Vehículo"} · ${vehiculo.numeroInventario || "Sin inventario"}`
+                    : "Selecciona un vehículo";
+                },
+              },
+            }}
+          >
+            {vehiculos.length > 0 ? (
+              vehiculos.map((vehiculo) => (
+                <MenuItem key={vehiculo.id || vehiculo._id} value={vehiculo.id || vehiculo._id}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.84rem", fontWeight: 700, lineHeight: 1.25 }} noWrap>
+                      {vehiculo.descripcion || vehiculo.nombre || "Vehículo sin descripción"}
+                    </Typography>
+                    <Typography sx={{ color: "#7b898c", fontSize: "0.72rem", mt: 0.25 }} noWrap>
+                      Inventario: {vehiculo.numeroInventario || "Sin número"}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))
+            ) : (
+              <MenuItem disabled value="">
+                {loadingCarga ? "Cargando vehículos..." : "No hay vehículos disponibles"}
               </MenuItem>
-            ))
-          ) : (
-            <MenuItem disabled value="">
-              {loadingCarga ? "Cargando vehículos..." : "No hay vehículos disponibles"}
-            </MenuItem>
+            )}
+          </TextField>
+
+          <TextField name="folio" label="Folio" value={formData.folio} onChange={handleChange} fullWidth sx={drawerFieldStyles} />
+          <TextField
+            name="fecha"
+            label="Fecha"
+            type="date"
+            value={formData.fecha}
+            onChange={handleChange}
+            fullWidth
+            slotProps={{ inputLabel: { shrink: true } }}
+            sx={drawerFieldStyles}
+          />
+          <TextField
+            name="numeroInventario"
+            label="Número de inventario"
+            value={formData.numeroInventario}
+            fullWidth
+            disabled
+            sx={drawerFieldStyles}
+          />
+          <TextField name="serie" label="Serie" value={formData.serie} fullWidth disabled sx={drawerFieldStyles} />
+          <TextField
+            select
+            name="cargaGasolinaElectrica"
+            label="Tipo de carga"
+            value={formData.cargaGasolinaElectrica}
+            fullWidth
+            disabled
+            sx={drawerFieldStyles}
+            slotProps={{ select: { MenuProps: drawerDropdownMenuProps } }}
+          >
+            <MenuItem value="No aplica">No aplica</MenuItem>
+            <MenuItem value="Gasolina">Gasolina</MenuItem>
+            <MenuItem value="Eléctrico">Eléctrico</MenuItem>
+          </TextField>
+
+          {formData.cargaGasolinaElectrica === "Eléctrico" && (
+            <Box
+              sx={{
+                gridColumn: "1 / -1",
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                gap: 1.5,
+                p: 1.5,
+                border: "1px solid #dce8ee",
+                borderRadius: "14px",
+                bgcolor: "#f5f9fb",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, gridColumn: "1 / -1" }}>
+                <ElectricBoltRoundedIcon sx={{ color: "#5081a5", fontSize: 20 }} />
+                <Box>
+                  <Typography sx={{ color: "#33484f", fontSize: "0.8rem", fontWeight: 750 }}>
+                    Nivel de batería
+                  </Typography>
+                  <Typography sx={{ color: "#7b898c", fontSize: "0.68rem" }}>
+                    Registra el porcentaje al entregar y recibir la unidad.
+                  </Typography>
+                </Box>
+              </Box>
+              <LevelGauge
+                name="cargaInicial"
+                label="Carga inicial"
+                value={formData.cargaInicial}
+                color="#5081a5"
+                maxValue={100}
+                unit="%"
+                unitLabel="por ciento"
+                onChange={handleChange}
+              />
+              <LevelGauge
+                name="cargaFinal"
+                label="Carga final"
+                value={formData.cargaFinal}
+                color="#467a77"
+                maxValue={100}
+                unit="%"
+                unitLabel="por ciento"
+                onChange={handleChange}
+              />
+            </Box>
           )}
-        </TextField>
 
-        <TextField 
-          name="folio" 
-          label="Folio" 
-          value={formData.folio} 
-          onChange={handleChange} 
-          fullWidth 
-        />
-        <TextField 
-          name="fecha" 
-          label="Fecha" 
-          type="date" 
-          value={formData.fecha} 
-          onChange={handleChange} 
-          fullWidth 
-          slotProps={{ inputLabel: { shrink: true } }} 
-        />
-        <TextField 
-          name="numeroInventario" 
-          label="Número de Inventario" 
-          value={formData.numeroInventario} 
-          onChange={handleChange} 
-          fullWidth 
-        />
+          {formData.cargaGasolinaElectrica === "Gasolina" && (
+            <Box
+              sx={{
+                gridColumn: "1 / -1",
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", lg: "repeat(2, minmax(0, 1fr))" },
+                gap: 1.5,
+                p: 1.5,
+                border: "1px solid #e4e8dc",
+                borderRadius: "14px",
+                bgcolor: "#fafbf6",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, gridColumn: "1 / -1" }}>
+                <LocalGasStationRoundedIcon sx={{ color: "#68886b", fontSize: 20 }} />
+                <Box>
+                  <Typography sx={{ color: "#3d4c40", fontSize: "0.8rem", fontWeight: 750 }}>
+                    Control de combustible
+                  </Typography>
+                  <Typography sx={{ color: "#7b898c", fontSize: "0.68rem" }}>
+                    Los indicadores se llenan conforme capturas los litros.
+                  </Typography>
+                </Box>
+              </Box>
 
-        <TextField 
-          name="serie" 
-          label="Serie" 
-          value={formData.serie} 
-          onChange={handleChange} 
-          fullWidth 
-        />
-        <TextField
-          select
-          name="cargaGasolinaElectrica"
-          label="Carga de Gasolina / Eléctrica"
-          value={formData.cargaGasolinaElectrica}
-          onChange={handleChange}
-          fullWidth
+              <LevelGauge
+                name="gasolinaInicial"
+                label="Gasolina inicial"
+                value={formData.gasolinaInicial}
+                color="#5081a5"
+                maxValue={50}
+                unit="lt"
+                unitLabel="litros"
+                onChange={handleChange}
+              />
+              <LevelGauge
+                name="gasolinaFinal"
+                label="Gasolina final"
+                value={formData.gasolinaFinal}
+                color="#467a77"
+                maxValue={50}
+                unit="lt"
+                unitLabel="litros"
+                onChange={handleChange}
+              />
+
+              <Box
+                sx={{
+                  gridColumn: "1 / -1",
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "auto repeat(2, minmax(0, 1fr))" },
+                  alignItems: "center",
+                  gap: 1.25,
+                  p: 1.25,
+                  border: "1px solid #e2e9e9",
+                  borderRadius: "12px",
+                  bgcolor: "#ffffff",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 38,
+                    height: 38,
+                    display: "grid",
+                    placeItems: "center",
+                    flexShrink: 0,
+                    color: "#467a77",
+                    bgcolor: "#eaf2f2",
+                    borderRadius: "10px",
+                  }}
+                >
+                  <SpeedRoundedIcon fontSize="small" />
+                </Box>
+                <TextField
+                  name="kilometrajeInicial"
+                  label="Kilometraje inicial"
+                  type="number"
+                  value={formData.kilometrajeInicial}
+                  onChange={handleChange}
+                  fullWidth
+                  size="small"
+                  sx={drawerFieldStyles}
+                  slotProps={{ htmlInput: { min: 0 }, input: { endAdornment: "km" } }}
+                />
+                <TextField
+                  name="kilometrajeFinal"
+                  label="Kilometraje final"
+                  type="number"
+                  value={formData.kilometrajeFinal}
+                  onChange={handleChange}
+                  fullWidth
+                  size="small"
+                  sx={drawerFieldStyles}
+                  slotProps={{ htmlInput: { min: 0 }, input: { endAdornment: "km" } }}
+                />
+              </Box>
+            </Box>
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+            p: 2,
+            border: "1px solid #e3e9ea",
+            borderRadius: "16px",
+            bgcolor: "#fbfcfc",
+          }}
         >
-          <MenuItem value="Gasolina">Gasolina</MenuItem>
-          <MenuItem value="Eléctrica">Eléctrica</MenuItem>
-        </TextField>
-        <TextField 
-          name="kilometraje" 
-          label="Kilometraje" 
-          type="number" 
-          value={formData.kilometraje} 
-          onChange={handleChange} 
-          fullWidth 
-        />
-        
-        <TextField
-          select
-          name="resguardante"
-          label="Empleado Responsable"
-          value={formData.resguardante}
-          onChange={handleChange}
-          fullWidth
-          required
-          disabled={loadingCarga}
-        >
-          {usuarios.length > 0 ? (
-            usuarios.map((usuario: any) => (
-              <MenuItem key={usuario.id || usuario._id} value={usuario.id || usuario._id}>
-                {usuario.nombre || usuario.correo || "Usuario sin nombre"}
+          <DrawerSectionTitle
+            icon={<PersonOutlineRoundedIcon fontSize="small" />}
+            title="Responsable"
+            description="Persona que quedará a cargo de la unidad."
+          />
+
+          <TextField
+            select
+            name="resguardante"
+            label="Empleado responsable"
+            value={formData.resguardante}
+            onChange={handleChange}
+            fullWidth
+            required
+            disabled={loadingCarga}
+            sx={drawerFieldStyles}
+            slotProps={{
+              select: {
+                MenuProps: drawerDropdownMenuProps,
+                renderValue: (value) => {
+                  const usuario = usuarios.find((item) => (item.id || item._id) === value);
+                  return usuario?.nombre || usuario?.correo || "Selecciona un empleado";
+                },
+              },
+            }}
+          >
+            {usuarios.length > 0 ? (
+              usuarios.map((usuario) => (
+                <MenuItem key={usuario.id || usuario._id} value={usuario.id || usuario._id}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography sx={{ fontSize: "0.84rem", fontWeight: 700, lineHeight: 1.25 }} noWrap>
+                      {usuario.nombre || "Usuario sin nombre"}
+                    </Typography>
+                    {usuario.correo && (
+                      <Typography sx={{ color: "#7b898c", fontSize: "0.72rem", mt: 0.25 }} noWrap>
+                        {usuario.correo}
+                      </Typography>
+                    )}
+                  </Box>
+                </MenuItem>
+              ))
+            ) : (
+              <MenuItem disabled value="">
+                {loadingCarga ? "Cargando usuarios..." : "No hay usuarios disponibles"}
               </MenuItem>
-            ))
-          ) : (
-            <MenuItem disabled value="">
-              {loadingCarga ? "Cargando usuarios" : "No hay usuarios disponibles"}
-            </MenuItem>
-          )}
-        </TextField>
+            )}
+          </TextField>
 
-        <TextField 
-          name="comentarios" 
-          label="Comentarios" 
-          multiline 
-          rows={3} 
-          value={formData.comentarios} 
-          onChange={handleChange} 
-          fullWidth 
-        />
-        
-        <Button 
-          variant="contained" 
-          onClick={handleSubmit} 
-          disabled={loadingSubmit || loadingCarga}
-        >
-          {loadingSubmit ? "Generando" : "Guardar y Descargar Resguardo"}
-        </Button>
+          <TextField
+            name="comentarios"
+            label="Comentarios u observaciones"
+            multiline
+            minRows={3}
+            value={formData.comentarios}
+            onChange={handleChange}
+            fullWidth
+            sx={{ ...drawerFieldStyles, flex: 1 }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <NotesRoundedIcon sx={{ color: "#9aa5aa", fontSize: 19, mr: 1, alignSelf: "flex-start", mt: 0.3 }} />
+                ),
+              },
+            }}
+          />
+        </Box>
       </Box>
+
     </CenteredDrawer>
   );
 }

@@ -7,7 +7,10 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Button from "@mui/material/Button";
-import CenteredDrawer from "./CenteredDrawer";
+import CenteredDrawer, {
+  drawerPrimaryButtonStyles,
+  drawerSecondaryButtonStyles,
+} from "./CenteredDrawer";
 
 export interface DrawerStep {
   label: string;
@@ -54,8 +57,19 @@ export default function StepperDrawer({
     onClose();
   };
 
+  const actions = (
+    <>
+      <Button disabled={activeStep === 0} onClick={handleBack} sx={drawerSecondaryButtonStyles}>
+        Atrás
+      </Button>
+      <Button variant="contained" onClick={handleNext} sx={drawerPrimaryButtonStyles}>
+        {isLastStep ? "Finalizar" : "Siguiente"}
+      </Button>
+    </>
+  );
+
   return (
-    <CenteredDrawer open={open} onClose={handleClose} title={title} width={width}>
+    <CenteredDrawer open={open} onClose={handleClose} title={title} width={width} actions={actions}>
       <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
         {steps.map((step) => (
           <Step key={step.label}>
@@ -65,15 +79,6 @@ export default function StepperDrawer({
       </Stepper>
 
       <Box sx={{ minHeight: 200, mb: 2 }}>{steps[activeStep].content()}</Box>
-
-      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Button disabled={activeStep === 0} onClick={handleBack}>
-          Atrás
-        </Button>
-        <Button variant="contained" onClick={handleNext}>
-          {isLastStep ? "Finalizar" : "Siguiente"}
-        </Button>
-      </Box>
     </CenteredDrawer>
   );
 }
