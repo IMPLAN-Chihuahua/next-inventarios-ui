@@ -1,321 +1,258 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from "react";
-import { Box, Typography, Avatar, Chip, CircularProgress } from "@mui/material";
-import NorthEastIcon from "@mui/icons-material/NorthEast";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { signOut } from "next-auth/react";
+import {
+  Alert,
+  Avatar,
+  Box,
+  CircularProgress,
+  Typography,
+} from "@mui/material";
+import { Package } from "lucide-react";
+import { inventariosApi } from "@/src/services/axios";
 
-// ---- Tipos ----
-type TipoMovimiento = "Entrada" | "Salida" | "Resguardo";
-
-interface Movimiento {
-  id: string;
-  articulo: string;
-  responsable: string;
-  categoria: string;
-  tipoMov: TipoMovimiento;
-  fecha: string;
-  iniciales: string;
-  avatarColor: string;
-  avatarTextColor: string;
+interface ArticuloApi {
+  _id: string;
+  numeroInventario?: string;
+  descripcion?: string;
+  resguardante?: string | {
+    _id?: string;
+    nombre?: string;
+  };
 }
 
-//  Configuración visual por tipo de movimiento 
-const tipoConfig: Record<
-  TipoMovimiento,
-  { bg: string; color: string; dot: string }
-> = {
-  Entrada: { bg: "#dcfce7", color: "#16a34a", dot: "#22c55e" },
-  Resguardo: { bg: "#fef3c7", color: "#d97706", dot: "#f59e0b" },
-  Salida: { bg: "#fee2e2", color: "#dc2626", dot: "#ef4444" },
+const obtenerResguardante = (resguardante: ArticuloApi["resguardante"]) => {
+  if (typeof resguardante === "object") return resguardante.nombre || "Sin asignar";
+  return "Sin asignar";
 };
 
-//  Funciones Auxiliares 
-const obtenerIniciales = (nombre: string): string => {
-  if (!nombre) return "--";
-  const palabras = nombre.trim().split(" ");
-  if (palabras.length === 1) return palabras[0].substring(0, 2).toUpperCase();
-  return (palabras[0][0] + palabras[1][0]).toUpperCase();
+const obtenerIniciales = (nombre: string) => {
+  if (nombre === "Sin asignar") return "—";
+
+  return nombre
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((palabra) => palabra.charAt(0))
+    .join("")
+    .toUpperCase();
 };
 
-const formatearFecha = (fechaISO: string): string => {
-  if (!fechaISO) return "Sin fecha";
-  const fecha = new Date(fechaISO);
-  return fecha.toLocaleDateString("es-MX", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-const mapearEstadoATipo = (estadoBack: string): TipoMovimiento => {
-  switch (estadoBack) {
-    case "Asignado":
-      return "Resguardo";
-    case "Baja":
-    case "Donado":
-      return "Salida";
-    case "Dictaminer":
-    case "Dictaminado":
-    default:
-      return "Entrada";
-  }
-};
-
-const TablaUltimosMov = () => {
-  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
-  const [cargando, setCargando] = useState<boolean>(true);
+export default function TablaUltimosMov() {
+  const [articulos, setArticulos] = useState<ArticuloApi[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    const obtenerArticulos = async () => {
-      try {
-        // Se puede agregar un query param como ?limit=5 para obtener solo los últimos
-       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}`);
-        
-        if (!response.ok) {
-          throw new Error("Error en la respuesta del servidor");
-        }
-        
-        // El backend devuelve { pagination: {...}, data: [...] }
-        const dataAPI = await response.json();
-        const listaArticulos = dataAPI.data || [];
-        
-        // Transformar el arreglo del backend a la interfaz del frontend
-        const datosMapeados: Movimiento[] = listaArticulos.map((item: any) => {
-          const nombreResponsable = item.resguardante?.nombre || "Sin Asignar";
-          
-          return {
-            id: item._id,
-            articulo: item.descripcion || "Artículo sin descripción",
-            responsable: nombreResponsable,
-            categoria: item.categoria?.tipo || "Sin Categoria", 
-            tipoMov: mapearEstadoATipo(item.estado),
-            fecha: formatearFecha(item.fechaAlta),
-            iniciales: obtenerIniciales(nombreResponsable),
-            avatarColor: "#f3f4f6",     
-            avatarTextColor: "#4b5563", 
-          };
-        });
+    let activo = true;
 
-        setMovimientos(datosMapeados);
+    const cargarArticulos = async () => {
+      try {
+        const { data } = await inventariosApi.get<{ data: ArticuloApi[] }>(
+          "/articulos/ultimos",
+        );
+
+        if (activo) setArticulos((data.data || []).slice(0, 4));
       } catch (error) {
-        console.error("Hubo un error al obtener los artículos:", error);
+        const tokenInvalido =
+          axios.isAxiosError(error) &&
+          error.response?.status === 403 &&
+          error.response?.data?.message === "JWT es inválido o ha expirado";
+
+        if (tokenInvalido) {
+          await signOut({ callbackUrl: "/login" });
+          return;
+        }
+
+        if (activo) setError(true);
       } finally {
-        setCargando(false);
+        if (activo) setCargando(false);
       }
     };
 
-    obtenerArticulos();
+    cargarArticulos();
+
+    return () => {
+      activo = false;
+    };
   }, []);
 
   return (
     <Box
       sx={{
-        backgroundColor: "#ffffff",
-        borderRadius: 4,
-        p: 4,
-        width: "100%",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+        height: "100%",
+        minHeight: 0,
+        bgcolor: "#fff",
+        border: "1px solid #e8ecef",
+        borderRadius: "16px",
+        boxShadow: "0 6px 24px rgba(45, 62, 72, 0.06)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      {/* Encabezado */}
       <Box
         sx={{
+          px: 2.5,
+          pt: 2.1,
+          pb: 1.4,
           display: "flex",
+          alignItems: "center",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          mb: 3,
+          gap: 2,
         }}
       >
         <Box>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 700, color: "#111827" }}
-          >
-            Últimos Movimientos
+          <Typography sx={{ fontSize: "0.98rem", fontWeight: 750, color: "#1f2933" }}>
+            Últimos artículos agregados
           </Typography>
-          <Typography sx={{ color: "#6b7280", fontSize: "0.9rem" }}>
-            Actividad reciente del inventario
+          <Typography sx={{ mt: 0.2, color: "#89939e", fontSize: "0.72rem" }}>
+            Los 4 registros más recientes del inventario
           </Typography>
         </Box>
 
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 0.5,
-            cursor: "pointer",
-            mt: 0.5,
-            "&:hover .ver-historial-texto": {
-              color: "#c06a2c",
-            },
-            "&:hover .ver-historial-flecha": {
-              transform: "translate(2px, -2px)",
-            },
+            width: 34,
+            height: 34,
+            borderRadius: "10px",
+            bgcolor: "#eef5f4",
+            color: "#467A77",
+            display: "grid",
+            placeItems: "center",
+            flexShrink: 0,
           }}
         >
-          <Typography
-            className="ver-historial-texto"
-            sx={{
-              color: "#d9843f",
-              fontWeight: 600,
-              fontSize: "0.9rem",
-              transition: "color 0.2s ease",
-            }}
-          >
-            Ver historial
-          </Typography>
-          <NorthEastIcon
-            className="ver-historial-flecha"
-            sx={{
-              fontSize: 16,
-              color: "#d9843f",
-              transition: "transform 0.2s ease",
-            }}
-          />
+          <Package size={17} strokeWidth={2} />
         </Box>
       </Box>
 
-      {/* Encabezado de columnas */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "1fr 160px 140px",
-          alignItems: "center",
-          columnGap: 3,
-          pb: 1.5,
-          pl: "60px",
-          borderBottom: "1px solid #e5e7eb",
-        }}
-      >
-        <Typography
-          sx={{
-            color: "#9ca3af",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-          }}
-        >
-          ARTÍCULO
-        </Typography>
+      <Box sx={{ mx: 2.5, height: "1px", bgcolor: "#eef1f3" }} />
 
-        <Typography
-          sx={{
-            color: "#9ca3af",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-          }}
-        >
-          TIPO
-        </Typography>
-
-        <Typography
-          sx={{
-            color: "#9ca3af",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.05em",
-            textAlign: "right",
-          }}
-        >
-          FECHA
-        </Typography>
-      </Box>
-
-      {/* Control de estado de carga */}
       {cargando ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-          <CircularProgress sx={{ color: "#d9843f" }} />
+        <Box sx={{ flex: 1, display: "grid", placeItems: "center" }}>
+          <CircularProgress size={26} sx={{ color: "#467A77" }} />
         </Box>
-      ) : movimientos.length === 0 ? (
-        <Typography sx={{ textAlign: "center", py: 4, color: "#6b7280" }}>
-          No hay artículos registrados.
-        </Typography>
+      ) : error ? (
+        <Alert severity="error" sx={{ m: 2.5 }}>
+          No fue posible cargar los artículos.
+        </Alert>
+      ) : articulos.length === 0 ? (
+        <Box sx={{ flex: 1, display: "grid", placeItems: "center", px: 3 }}>
+          <Typography sx={{ color: "#7d8790", fontSize: "0.82rem", textAlign: "center" }}>
+            Aún no hay artículos registrados.
+          </Typography>
+        </Box>
       ) : (
-        /* Filas */
-        movimientos.map((mov) => {
-          const config = tipoConfig[mov.tipoMov] || tipoConfig.Entrada;
-          return (
+        <Box sx={{ flex: 1, minHeight: 0, overflowX: "auto", px: 2.5, pb: 1.25 }}>
+          <Box sx={{ minWidth: 520 }}>
             <Box
-              key={mov.id}
               sx={{
                 display: "grid",
-                gridTemplateColumns: "1fr 160px 140px",
+                gridTemplateColumns: "minmax(260px, 1.6fr) minmax(180px, 1fr)",
+                gap: 1.5,
                 alignItems: "center",
-                columnGap: 3,
-                py: 2.5,
-                px: 1.5,
-                mx: -1.5,
-                borderRadius: 2,
-                borderBottom: "1px solid #f3f4f6",
-                transition: "background-color 0.2s ease, transform 0.2s ease",
-                "&:last-of-type": { borderBottom: "none" },
-                "&:hover": {
-                  backgroundColor: config.bg,
-                  transform: "translateX(2px)",
-                },
+                py: 1,
               }}
             >
-              {/* Avatar + articulo */}
-              <Box sx={{ display: "flex", flexDirection: "row", gap: 2, alignItems: "center" }}>
-                <Avatar
+              {["ARTÍCULO", "RESGUARDANTE"].map((encabezado) => (
+                <Typography
+                  key={encabezado}
                   sx={{
-                    bgcolor: mov.avatarColor,
-                    color: mov.avatarTextColor,
-                    fontWeight: 700,
-                    width: 44,
-                    height: 44,
-                    fontSize: "0.9rem",
-                    flexShrink: 0,
+                    color: "#a0a8b0",
+                    fontSize: "0.62rem",
+                    fontWeight: 750,
+                    letterSpacing: "0.06em",
                   }}
                 >
-                  {mov.iniciales}
-                </Avatar>
-                <Box>
-                  <Typography sx={{ fontWeight: 600, color: "#111827" }}>
-                    {mov.articulo}
-                  </Typography>
-                  <Typography sx={{ color: "#6b7280", fontSize: "0.875rem" }}>
-                    {mov.responsable} · {mov.categoria}
-                  </Typography>
-                </Box>
-              </Box>
+                  {encabezado}
+                </Typography>
+              ))}
+            </Box>
 
-              {/* Tipo */}
-              <Box>
-                <Chip
-                  label={mov.tipoMov}
+            {articulos.map((articulo) => {
+              const resguardante = obtenerResguardante(articulo.resguardante);
+
+              return (
+                <Box
+                  key={articulo._id}
                   sx={{
-                    backgroundColor: config.bg,
-                    color: config.color,
-                    fontWeight: 600,
-                    "& .MuiChip-label": { px: 1 },
+                    display: "grid",
+                    gridTemplateColumns: "minmax(260px, 1.6fr) minmax(180px, 1fr)",
+                    gap: 1.5,
+                    alignItems: "center",
+                    minHeight: 39,
+                    py: 0.65,
+                    borderTop: "1px solid #f0f2f4",
+                    transition: "background-color 160ms ease",
+                    "&:hover": {
+                      bgcolor: "#fafcfc",
+                    },
                   }}
-                  icon={
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.1, minWidth: 0 }}>
                     <Box
                       sx={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: "50%",
-                        backgroundColor: config.dot,
-                        ml: 1.5,
+                        width: 28,
+                        height: 28,
+                        borderRadius: "8px",
+                        bgcolor: "#f1f5f5",
+                        color: "#5f8784",
+                        display: "grid",
+                        placeItems: "center",
+                        flexShrink: 0,
                       }}
-                    />
-                  }
-                />
-              </Box>
+                    >
+                      <Package size={14} />
+                    </Box>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography
+                        noWrap
+                        title={articulo.descripcion || "Artículo sin descripción"}
+                        sx={{ color: "#27313a", fontSize: "0.75rem", fontWeight: 650 }}
+                      >
+                        {articulo.descripcion || "Artículo sin descripción"}
+                      </Typography>
+                      <Typography noWrap sx={{ color: "#9aa3ab", fontSize: "0.63rem" }}>
+                        {articulo.numeroInventario || "Sin número de inventario"}
+                      </Typography>
+                    </Box>
+                  </Box>
 
-              {/* Fecha */}
-              <Typography sx={{ color: "#6b7280", fontSize: "0.875rem", textAlign: "right" }}>
-                {mov.fecha}
-              </Typography>
-            </Box>
-          );
-        })
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.9, minWidth: 0 }}>
+                    <Avatar
+                      sx={{
+                        width: 26,
+                        height: 26,
+                        bgcolor: resguardante === "Sin asignar" ? "#f1f2f3" : "#f6eee5",
+                        color: resguardante === "Sin asignar" ? "#9ba1a6" : "#a66b36",
+                        fontSize: "0.61rem",
+                        fontWeight: 750,
+                      }}
+                    >
+                      {obtenerIniciales(resguardante)}
+                    </Avatar>
+                    <Typography
+                      noWrap
+                      title={resguardante}
+                      sx={{
+                        color: resguardante === "Sin asignar" ? "#969fa7" : "#4b5560",
+                        fontSize: "0.7rem",
+                        fontWeight: 550,
+                      }}
+                    >
+                      {resguardante}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        </Box>
       )}
     </Box>
   );
-};
-
-export default TablaUltimosMov;
+}
