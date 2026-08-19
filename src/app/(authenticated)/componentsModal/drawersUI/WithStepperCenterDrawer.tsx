@@ -7,6 +7,7 @@ import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import CenteredDrawer, {
   drawerPrimaryButtonStyles,
   drawerSecondaryButtonStyles,
@@ -15,15 +16,20 @@ import CenteredDrawer, {
 export interface DrawerStep {
   label: string;
   content: () => ReactNode;
-  validate?: () => boolean;
+  validate?: () => boolean | Promise<boolean>;
 }
 
 interface StepperDrawerProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  subtitle?: string;
+  icon?: ReactNode;
   steps: DrawerStep[];
-  onFinish?: () => void;
+  onFinish?: () => boolean | void | Promise<boolean | void>;
+  finishLabel?: string;
+  disabled?: boolean;
+  size?: "compact" | "standard" | "wide";
   width?: number | string;
 }
 
@@ -31,20 +37,31 @@ export default function StepperDrawer({
   open,
   onClose,
   title,
+  subtitle,
+  icon,
   steps,
   onFinish,
+  finishLabel = "Finalizar",
+  disabled = false,
+  size = "standard",
   width,
 }: StepperDrawerProps) {
   const [activeStep, setActiveStep] = useState(0);
+  const [finishing, setFinishing] = useState(false);
   const isLastStep = activeStep === steps.length - 1;
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const current = steps[activeStep];
-    if (current.validate && !current.validate()) return;
+    if (current.validate && !(await current.validate())) return;
 
     if (isLastStep) {
-      onFinish?.();
-      handleClose();
+      setFinishing(true);
+      try {
+        const shouldClose = await onFinish?.();
+        if (shouldClose !== false) handleClose();
+      } finally {
+        setFinishing(false);
+      }
     } else {
       setActiveStep((s) => s + 1);
     }
@@ -59,18 +76,41 @@ export default function StepperDrawer({
 
   const actions = (
     <>
-      <Button disabled={activeStep === 0} onClick={handleBack} sx={drawerSecondaryButtonStyles}>
+      <Button disabled={activeStep === 0 || finishing} onClick={handleBack} sx={drawerSecondaryButtonStyles}>
         Atrás
       </Button>
-      <Button variant="contained" onClick={handleNext} sx={drawerPrimaryButtonStyles}>
-        {isLastStep ? "Finalizar" : "Siguiente"}
+      <Button
+        variant="contained"
+        onClick={handleNext}
+        disabled={disabled || finishing}
+        startIcon={finishing ? <CircularProgress size={16} color="inherit" /> : undefined}
+        sx={drawerPrimaryButtonStyles}
+      >
+        {finishing ? "Guardando..." : isLastStep ? finishLabel : "Siguiente"}
       </Button>
     </>
   );
 
   return (
-    <CenteredDrawer open={open} onClose={handleClose} title={title} width={width} actions={actions}>
-      <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+    <CenteredDrawer
+      open={open}
+      onClose={finishing ? () => undefined : handleClose}
+      title={title}
+      subtitle={subtitle}
+      icon={icon}
+      size={size}
+      width={width}
+      actions={actions}
+    >
+      <Stepper
+        activeStep={activeStep}
+        alternativeLabel
+        sx={{
+          mb: 3,
+          "& .MuiStepLabel-label": { fontSize: { xs: "0.68rem", sm: "0.78rem" }, fontWeight: 650 },
+          "& .MuiStepIcon-root.Mui-active, & .MuiStepIcon-root.Mui-completed": { color: "#467a77" },
+        }}
+      >
         {steps.map((step) => (
           <Step key={step.label}>
             <StepLabel>{step.label}</StepLabel>
@@ -78,7 +118,7 @@ export default function StepperDrawer({
         ))}
       </Stepper>
 
-      <Box sx={{ minHeight: 200, mb: 2 }}>{steps[activeStep].content()}</Box>
+      <Box sx={{ minHeight: 280 }}>{steps[activeStep].content()}</Box>
     </CenteredDrawer>
   );
 }

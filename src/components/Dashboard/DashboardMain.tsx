@@ -31,7 +31,7 @@ import BotonesGridAmarillo from "./BotonesGrid";
 import ResguardoVehicularDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ResguardoVehicularDrawer";
 import ImprimirEtiquetasDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ImprimirEtiquetasDrawer";
 import DescargarResguardosDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/DescargarResguardosDrawer";
-// import AgregarArticuloDrawer from "@/app/(authenticated)/articulos/components/AgregarArticuloDrawer";
+import AgregarArticuloDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/AgregarArticuloDrawer";
 
 
 
@@ -325,10 +325,10 @@ const Dashboard = () => {
         open={openDrawer === "descargar-resguardos"}
         onClose={handleClose}
       />
-      {/* <AgregarArticuloDrawer
+      <AgregarArticuloDrawer
         open={openDrawer === "agregar-articulo"}
         onClose={handleClose}
-      /> */}
+      />
     </Box>
   );
 };
