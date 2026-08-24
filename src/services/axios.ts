@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getSession } from 'next-auth/react';
+import { getSession, signOut } from 'next-auth/react';
 
 const baseURL = process.env.NEXT_PUBLIC_INVENTARIOS_BASE_URL
 
@@ -34,3 +34,27 @@ inventariosApi.interceptors.request.use(async (config) => {
     }
     return config;
 });
+let redirectingToLogin = false;
+
+inventariosApi.interceptors.response.use(
+    response => response,
+    async error => {
+        const status = error?.response?.status;
+        const message = error?.response?.data?.message;
+        const authenticationExpired =
+            status === 401 ||
+            (status === 403 && message === 'JWT es inválido o ha expirado');
+
+        if (
+            typeof window !== 'undefined' &&
+            authenticationExpired &&
+            !redirectingToLogin
+        ) {
+            redirectingToLogin = true;
+            await signOut({ callbackUrl: '/login' });
+        }
+
+        return Promise.reject(error);
+    }
+);
+
