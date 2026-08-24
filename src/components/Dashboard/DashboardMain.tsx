@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, Typography } from "@mui/material";
-import {
-  FileSpreadsheet,
-  type LucideIcon,
-} from "lucide-react";
+import { Box, ButtonBase, Menu, MenuItem, Typography } from "@mui/material";
+import { ArrowRight, FileSpreadsheet, ShieldCheck, type LucideIcon } from "lucide-react";
 import BotonesGridAmarillo from "./BotonesGrid";
 import TablaUltimosMov from "./TablaUltimosMov";
 import DistribucionEstado from "./DistribucionEstado";
 import ImportarExcel from "./ImportarExcel";
+import CapturaRapida from "./CapturaRapida";
+import ResguardoExterno from "./ResguardoExterno";
+import ResguardoInterno from "./ResguardoInterno";
 
 import ResguardoVehicularDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ResguardoVehicularDrawer";
 import ImprimirEtiquetasDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ImprimirEtiquetasDrawer";
@@ -104,7 +104,6 @@ const CardShell = ({
 // Dashboard
 // ============================================================
 const Dashboard = () => {
-  // 👇 controla cuál drawer está abierto (null = ninguno)
   const [openDrawer, setOpenDrawer] = useState<string | null>(null);
   const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
 
@@ -145,8 +144,16 @@ const Dashboard = () => {
             <BotonesGridAmarillo onAction={setOpenDrawer} />
           </Box>
 
-          <Box sx={{ gridColumn: "3", gridRow: "1 / 3", minWidth: 0 }}>
-            <TablaUltimosMov key={`ultimos-${dashboardRefreshKey}`} />
+          <Box sx={{ gridColumn: "3", gridRow: "1 / 3", position: "relative", display: "flex", flexDirection: "column", overflow: "hidden", textAlign: "left", borderRadius: "18px", bgcolor: "#fefefe", border: "1px solid rgba(0,0,0,.1)", boxShadow: "0 4px 24px rgba(0,0,0,.025)", transition: "all .3s cubic-bezier(.25,.8,.25,1)", "&:hover": { transform: "translateY(-6px)", background: "radial-gradient(120% 120% at 100% 100%, rgba(70,122,119,.10) 0%, rgba(255,255,255,0) 65%), #fefefe", "& .resguardo-options": { opacity: .9, transform: "translateY(0)", pointerEvents: "auto" }, "& .resguardo-watermark": { opacity: .8 } } }}>
+            <Box sx={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, bgcolor: "#467A77", zIndex: 1 }} />
+            <Box className="resguardo-watermark" sx={{ position: "absolute", right: 12, bottom: 12, color: "#467A77", opacity: .3, pointerEvents: "none", zIndex: 0, transition: "opacity .4s ease", display: "flex", alignItems: "center", justifyContent: "center" }}><ShieldCheck size={78} strokeWidth={1.25} /></Box>
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "flex-start", p: 2, position: "relative", zIndex: 1 }}>
+              <Box><Typography sx={{ color: "#060606", fontWeight: 600, fontSize: ".7rem", letterSpacing: ".05em", mb: .5 }}>CREAR</Typography><Typography sx={{ color: "#467A77", fontWeight: 900, fontSize: "1.3rem", letterSpacing: "-.015em", lineHeight: 1.1 }}>Resguardo</Typography></Box>
+              <Box className="resguardo-options" sx={{ display: "flex", alignItems: "center", gap: 2, position: "absolute", bottom: 16, left: 16, opacity: 0, transform: "translateY(10px)", pointerEvents: "none", transition: "all .4s cubic-bezier(.25,.8,.25,1)" }}>
+                <ButtonBase onClick={() => setOpenDrawer("resguardo-interno")} sx={{ display: "flex", alignItems: "center", gap: .5, color: "#467A77", borderRadius: "4px" }}><Typography sx={{ fontWeight: 700, fontSize: ".7rem" }}>Resguardo interno</Typography><ArrowRight size={14} strokeWidth={2.5} /></ButtonBase>
+                <ButtonBase onClick={() => setOpenDrawer("resguardo-externo")} sx={{ display: "flex", alignItems: "center", gap: .5, color: "#467A77", borderRadius: "4px" }}><Typography sx={{ fontWeight: 700, fontSize: ".7rem" }}>Resguardo externo</Typography><ArrowRight size={14} strokeWidth={2.5} /></ButtonBase>
+              </Box>
+            </Box>
           </Box>
         </Box>
 
@@ -164,34 +171,20 @@ const Dashboard = () => {
             <ImportarExcel onImported={() => setDashboardRefreshKey((current) => current + 1)} />
           </CardShell>
 
-          <CardShell title="Distribución por estado" accentColor="#5081A5">
+          <CardShell title="Articulos distribuidos por categoria" accentColor="#5081A5">
             <DistribucionEstado key={`estados-${dashboardRefreshKey}`} />
           </CardShell>
 
-          <CardShell title="Categorias" accentColor="#467A77">
-            <Box
-              sx={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#c7c9cc",
-                fontSize: "0.85rem",
-              }}
-            >
-              {/* Placeholder */}
-            </Box>
+          <CardShell title="Agregar Multiples Articulos" icon={FileSpreadsheet} accentColor="#467A77">
+            <CapturaRapida onSaved={() => setDashboardRefreshKey((current) => current + 1)} />
           </CardShell>
         </Box>
 
-        {/* ================= FILA 3 ================= */}
-        <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 2.5 }}>
-          <CardShell title="Top articulos (quiza)" accentColor="#5081A5" sx={{ minHeight: 320 }}>
-            {/* ranking/lista */}
-          </CardShell>
-        </Box>
-        
-      </Box>
+        {/* ================= FILA 3: últimos artículos a todo lo ancho ================= */}
+        <Box sx={{ height: 320 }}>
+          <TablaUltimosMov key={"ultimos-" + dashboardRefreshKey} />
+        </Box></Box>
+
 
       {/* ================= DRAWERS ================= */}
       <ResguardoVehicularDrawer
@@ -206,7 +199,8 @@ const Dashboard = () => {
         open={openDrawer === "descargar-resguardos"}
         onClose={handleClose}
       />
-      <AgregarArticuloDrawer
+      <ResguardoInterno controlledOpen={openDrawer === "resguardo-interno"} onControlledClose={handleClose} hideLauncher onSaved={() => setDashboardRefreshKey((current) => current + 1)} />
+      <ResguardoExterno controlledOpen={openDrawer === "resguardo-externo"} onControlledClose={handleClose} hideLauncher />      <AgregarArticuloDrawer
         open={openDrawer === "agregar-articulo"}
         onClose={handleClose}
       />
@@ -215,3 +209,13 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
+
+
+
+
+
+
+
+
