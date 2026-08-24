@@ -1,4 +1,7 @@
 "use client";
+import { useEstados } from "@/src/hooks/useEstados";
+
+
 
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Box, MenuItem, TextField, Typography } from "@mui/material";
@@ -33,6 +36,7 @@ interface Usuario {
   id?: string;
   _id?: string;
   nombre?: string;
+  activo?: boolean;
 }
 
 interface ArticuloFormData {
@@ -52,7 +56,17 @@ interface ArticuloFormData {
   resguardante: string;
 }
 
-const ESTADOS = ["Asignado", "Baja", "Donado", "Dictaminar", "Dictaminado"];
+const INVENTARIO_REGEX = /^\d{10}-\d$/;
+const formatInventario = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  return digits.length > 10 ? digits.slice(0, 10) + "-" + digits.slice(10) : digits;
+};
+const tomorrow = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  const offset = date.getTimezoneOffset();
+  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10);
+};
 const LOCALIZACIONES = [
   "Área técnica",
   "Site",
@@ -73,7 +87,7 @@ const initialFormData: ArticuloFormData = {
   descripcion: "",
   estado: "",
   fechaAsignacion: "",
-  fechaFactura: "",
+  fechaFactura: tomorrow(),
   localizacion: "",
   marca: "",
   modelo: "",
@@ -103,7 +117,9 @@ const panelStyles = {
   bgcolor: "#fbfcfc",
 };
 
-export default function AgregarArticuloDrawer({ open, onClose }: Props) {
+export default function AgregarArticuloDrawer({
+  open, onClose }: Props) {
+  const ESTADOS = useEstados();
   const [formData, setFormData] = useState<ArticuloFormData>(initialFormData);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
@@ -117,7 +133,7 @@ export default function AgregarArticuloDrawer({ open, onClose }: Props) {
     try {
       const [categoriasResponse, usuariosResponse] = await Promise.all([
         fetch("/api/v1/categorias?limit=1000&fields=tipo,descripcion"),
-        fetch("/api/v1/usuarios?limit=1000&fields=nombre"),
+        fetch("/api/v1/usuarios?limit=1000&fields=nombre,activo"),
       ]);
 
       if (!categoriasResponse.ok || !usuariosResponse.ok) {
@@ -130,7 +146,7 @@ export default function AgregarArticuloDrawer({ open, onClose }: Props) {
       ]);
 
       setCategorias(getList<Categoria>(categoriasJson));
-      setUsuarios(getList<Usuario>(usuariosJson));
+      setUsuarios(getList<Usuario>(usuariosJson).filter((usuario) => usuario.activo === true));
     } catch (error) {
       console.error(error);
       setErrorMessage("No fue posible cargar los catálogos del formulario.");
@@ -153,7 +169,7 @@ export default function AgregarArticuloDrawer({ open, onClose }: Props) {
     const { name, value } = event.target;
     setFormData((current) => ({
       ...current,
-      [name]: value,
+      [name]: name === "numeroInventario" ? formatInventario(value) : value,
       ...(name === "estado" && value !== "Asignado" ? { resguardante: "" } : {}),
     }));
     setErrorMessage("");
@@ -173,6 +189,11 @@ export default function AgregarArticuloDrawer({ open, onClose }: Props) {
       !formData.localizacion.trim()
     ) {
       setErrorMessage("Completa categoría, estado, número de inventario y localización para continuar.");
+      return false;
+    }
+
+    if (!INVENTARIO_REGEX.test(formData.numeroInventario.trim())) {
+      setErrorMessage("El número de inventario debe tener el formato 5640100003-1.");
       return false;
     }
 
@@ -326,7 +347,9 @@ export default function AgregarArticuloDrawer({ open, onClose }: Props) {
               label="Número de inventario"
               value={formData.numeroInventario}
               onChange={handleChange}
+              placeholder="5640100003-1"
               fullWidth
+              slotProps={{ htmlInput: { maxLength: 12, inputMode: "numeric" } }}
               sx={drawerFieldStyles}
             />
             <TextField
@@ -575,3 +598,13 @@ export default function AgregarArticuloDrawer({ open, onClose }: Props) {
     />
   );
 }
+
+
+
+
+
+
+
+
+
+
