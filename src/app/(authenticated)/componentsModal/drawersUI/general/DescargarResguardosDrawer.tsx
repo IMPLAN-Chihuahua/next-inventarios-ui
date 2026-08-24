@@ -20,6 +20,7 @@ interface Usuario {
   id?: string;
   _id?: string;
   nombre?: string;
+  activo?: boolean;
 }
 
 export default function DescargarResguardosDrawer({ open, onClose }: Props) {
@@ -31,12 +32,12 @@ export default function DescargarResguardosDrawer({ open, onClose }: Props) {
   const cargarUsuarios = useCallback(async () => {
     setLoadingUsuarios(true);
     try {
-      const response = await fetch("/api/v1/usuarios?limit=1000&fields=nombre");
+      const response = await fetch("/api/v1/usuarios?limit=1000&fields=nombre,activo");
       if (!response.ok) throw new Error("No fue posible cargar los trabajadores.");
 
       const json = await response.json();
       const lista = Array.isArray(json) ? json : (json.data || json.items || []);
-      setUsuarios(lista);
+      setUsuarios((lista as Usuario[]).filter((usuario) => usuario.activo === true));
     } catch (error) {
       console.error(error);
       setUsuarios([]);
@@ -118,7 +119,7 @@ export default function DescargarResguardosDrawer({ open, onClose }: Props) {
       open={open}
       onClose={onClose}
       title="Descargar resguardo"
-      subtitle="Selecciona al trabajador cuyo resguardo deseas generar."
+      subtitle="Selecciona al trabajador para descargar su resguardo."
       icon={<FileDownloadRoundedIcon />}
       actions={actions}
     >
@@ -187,3 +188,6 @@ export default function DescargarResguardosDrawer({ open, onClose }: Props) {
     </CenteredDrawer>
   );
 }
+
+
+
