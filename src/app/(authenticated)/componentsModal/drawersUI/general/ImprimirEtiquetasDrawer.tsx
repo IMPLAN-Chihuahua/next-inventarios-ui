@@ -27,6 +27,7 @@ import CenteredDrawer, {
 interface Props {
   open: boolean;
   onClose: () => void;
+  initialSelected?: Articulo[];
 }
 
 interface Articulo {
@@ -55,7 +56,7 @@ const normalizeText = (value: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es-MX");
 
-export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
+export default function ImprimirEtiquetasDrawer({ open, onClose, initialSelected = [] }: Props) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [resultados, setResultados] = useState<Articulo[]>([]);
@@ -64,6 +65,15 @@ export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
   const [searchError, setSearchError] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!open) return;
+    const initial = initialSelected.reduce<Record<string, Articulo>>((result, articulo) => {
+      const id = getArticuloId(articulo);
+      if (id) result[id] = articulo;
+      return result;
+    }, {});
+    setSeleccionados(initial);
+  }, [open, initialSelected]);
   const articulosSeleccionados = useMemo(() => Object.values(seleccionados), [seleccionados]);
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -76,6 +86,9 @@ export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
           print-color-adjust: exact;
         }
         .qr-print-sheet {
+          position: static !important;
+          left: auto !important;
+          top: auto !important;
           display: grid !important;
           grid-template-columns: repeat(2, 268.8px) !important;
           justify-content: center !important;
@@ -215,7 +228,7 @@ export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
       open={open}
       onClose={handleClose}
       title="Imprimir etiquetas QR"
-      subtitle="Busca por descripción o número de inventario y conserva tus selecciones."
+      subtitle=" "
       icon={<QrCode2RoundedIcon />}
       actions={actions}
       size="standard"
@@ -224,7 +237,7 @@ export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
         fullWidth
         autoFocus
         label="Buscar artículo"
-        placeholder='Ej. "sill" o "5110100107-1"'
+        placeholder='Busca por descripción o número de inventario'
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         sx={drawerFieldStyles}
@@ -293,10 +306,9 @@ export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
             <Box>
               <SearchRoundedIcon sx={{ color: "#a8b3b5", fontSize: 34 }} />
               <Typography sx={{ color: "#647275", fontSize: "0.8rem", fontWeight: 700, mt: 0.75 }}>
-                Escribe al menos dos caracteres
               </Typography>
               <Typography sx={{ color: "#939ea0", fontSize: "0.7rem", mt: 0.4 }}>
-                Busca coincidencias parciales en la descripción o el número de inventario.
+                Busca articulos para imprimir etiquetas QR.
               </Typography>
             </Box>
           </Box>
@@ -382,22 +394,17 @@ export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
             </Box>
           </Box>
 
-          <Typography sx={{ color: "#354447", fontSize: "0.78rem", fontWeight: 750, mt: 2, mb: 1 }}>
-            Vista previa de impresión
-          </Typography>
+
           <Box
             ref={printRef}
             className="qr-print-sheet"
             sx={{
+              position: "fixed",
+              left: "-10000px",
+              top: 0,
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, 268.8px)",
-              justifyContent: "center",
+              gridTemplateColumns: "repeat(2, 268.8px)",
               gap: 1,
-              maxHeight: 200,
-              overflowY: "auto",
-              p: 1,
-              border: "1px solid #e3e9ea",
-              borderRadius: "14px",
               bgcolor: "#ffffff",
             }}
           >
@@ -457,3 +464,6 @@ export default function ImprimirEtiquetasDrawer({ open, onClose }: Props) {
     </CenteredDrawer>
   );
 }
+
+
+
