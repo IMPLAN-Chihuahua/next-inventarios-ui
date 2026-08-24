@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:https": "next dev --hostname 0.0.0.0 --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -20,6 +21,7 @@
     "axios": "^1.18.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "html5-qrcode": "^2.3.8",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^1.23.0",
     "motion": "^12.42.2",
@@ -48,3 +50,5 @@
     "typescript": "^5"
   }
 }
+
+
