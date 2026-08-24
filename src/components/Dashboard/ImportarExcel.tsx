@@ -92,7 +92,7 @@ export default function ImportarExcel({ onImported }: Props) {
   return (
     <Box sx={{ display: "flex", flex: 1, minHeight: 0, flexDirection: "column", gap: 1.25 }}>
       <Typography sx={{ color: "#778386", fontSize: "0.72rem", lineHeight: 1.45 }}>
-        Usa la estructura del formato de alta. Se omiten automáticamente _id, fechaAlta, updatedAt y valorLibros.
+        Agregar multiples articulos desde archivo Excel.
       </Typography>
 
       <Box
