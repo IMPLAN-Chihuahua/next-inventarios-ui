@@ -37,7 +37,7 @@ const acciones: AccionRapida[] = [
   {
     id: "agregar-articulo",
     step: "Agregar",
-    titulo: "Artículos",
+    titulo: "Artículo",
     color: "#94B8BA",
     lordIconSrc: "https://cdn.lordicon.com/fikcyfpp.json",
   },
