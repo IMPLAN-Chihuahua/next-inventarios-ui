@@ -82,10 +82,12 @@ export default function TablaUltimosMov() {
   return (
     <Box
       sx={{
+        position: "relative",
         height: "100%",
         minHeight: 0,
         bgcolor: "#fff",
         border: "1px solid #e8ecef",
+        borderLeft: "4px solid #467A77",
         borderRadius: "16px",
         boxShadow: "0 6px 24px rgba(45, 62, 72, 0.06)",
         overflow: "hidden",
@@ -109,7 +111,7 @@ export default function TablaUltimosMov() {
             Últimos artículos agregados
           </Typography>
           <Typography sx={{ mt: 0.2, color: "#89939e", fontSize: "0.72rem" }}>
-            Los 4 registros más recientes del inventario
+            
           </Typography>
         </Box>
 
@@ -193,20 +195,6 @@ export default function TablaUltimosMov() {
                   }}
                 >
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1.1, minWidth: 0 }}>
-                    <Box
-                      sx={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "8px",
-                        bgcolor: "#f1f5f5",
-                        color: "#5f8784",
-                        display: "grid",
-                        placeItems: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Package size={14} />
-                    </Box>
                     <Box sx={{ minWidth: 0 }}>
                       <Typography
                         noWrap
@@ -256,3 +244,6 @@ export default function TablaUltimosMov() {
     </Box>
   );
 }
+
+
+
