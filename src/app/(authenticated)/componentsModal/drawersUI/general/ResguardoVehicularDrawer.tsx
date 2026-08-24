@@ -36,6 +36,8 @@ interface Vehiculo {
   nombre?: string;
   numeroInventario?: string;
   noSerie?: string;
+  tipoEnergia?: "Gasolina" | "Eléctrico" | "No aplica";
+  capacidadCombustible?: number;
 }
 
 interface Usuario {
@@ -43,12 +45,26 @@ interface Usuario {
   _id?: string;
   nombre?: string;
   correo?: string;
+  activo?: boolean;
 }
 
 const CATEGORIA_TRANSPORTE_ID = "0c63012a-e7a2-4239-b7ff-4c17fe9b38dc";
 
+const obtenerCapacidadGasolina = (vehiculo?: Vehiculo) => {
+  if (vehiculo?.capacidadCombustible) return vehiculo.capacidadCombustible;
+  const descripcion = `${vehiculo?.descripcion || ""} ${vehiculo?.nombre || ""}`
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
+  if (descripcion.includes("CHEVROLET")) return 35;
+  if (descripcion.includes("RANGER")) return 75;
+
+  return 50;
+};
 const obtenerTipoCarga = (vehiculo?: Vehiculo) => {
   if (!vehiculo) return "";
+  if (vehiculo.tipoEnergia) return vehiculo.tipoEnergia;
 
   const descripcion = `${vehiculo.descripcion || ""} ${vehiculo.nombre || ""}`
     .normalize("NFD")
@@ -198,7 +214,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     try {
       const [resVehiculos, resUsuarios] = await Promise.all([
         fetch(`/api/v1/articulos?categorias=${CATEGORIA_TRANSPORTE_ID}&limit=1000`),
-        fetch('/api/v1/usuarios')
+        fetch('/api/v1/usuarios?limit=1000&fields=nombre,correo,activo')
       ]);
 
       if (resVehiculos.ok) {
@@ -217,7 +233,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
         const listaUsuarios = Array.isArray(jsonUsuarios)
           ? jsonUsuarios
           : (jsonUsuarios.data || jsonUsuarios.items || []);
-        setUsuarios(listaUsuarios);
+        setUsuarios((listaUsuarios as Usuario[]).filter((usuario) => usuario.activo === true));
       } else {
         const errorBody = await resUsuarios.text();
         console.error("Error al cargar usuarios:", resUsuarios.status, errorBody);
@@ -240,7 +256,23 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
   }, [open, cargarDatos]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name } = e.target;
+    let { value } = e.target;
+    const vehiculoSeleccionado = vehiculos.find(
+      (vehiculo) => (vehiculo.id || vehiculo._id) === formData.articuloId
+    );
+
+    const limite = name === "cargaInicial" || name === "cargaFinal"
+      ? 100
+      : name === "gasolinaInicial" || name === "gasolinaFinal"
+        ? obtenerCapacidadGasolina(vehiculoSeleccionado)
+        : undefined;
+
+    if (value !== "" && limite !== undefined) {
+      value = String(Math.min(Math.max(Number(value), 0), limite));
+    }
+
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleVehiculoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -331,6 +363,10 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     }
   };
 
+  const vehiculoSeleccionado = vehiculos.find(
+    (vehiculo) => (vehiculo.id || vehiculo._id) === formData.articuloId
+  );
+  const capacidadGasolina = obtenerCapacidadGasolina(vehiculoSeleccionado);
   const actions = (
     <>
       <Button
@@ -358,7 +394,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
       open={open}
       onClose={onClose}
       title="Nuevo resguardo vehicular"
-      subtitle="Registra los datos del vehículo y de la persona responsable para generar el documento."
+      subtitle="Registra los datos del vehículo y del empleado responsable"
       icon={<DirectionsCarRoundedIcon />}
       actions={actions}
       size="wide"
@@ -386,7 +422,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
           <DrawerSectionTitle
             icon={<DirectionsCarRoundedIcon fontSize="small" />}
             title="Datos del vehículo"
-            description="Selecciona la unidad y completa la información del documento."
+            description="Completa la información del vehículo."
           />
 
           <TextField
@@ -533,7 +569,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
                     Control de combustible
                   </Typography>
                   <Typography sx={{ color: "#7b898c", fontSize: "0.68rem" }}>
-                    Los indicadores se llenan conforme capturas los litros.
+                    Capacidad máxima de esta unidad: {capacidadGasolina} litros.
                   </Typography>
                 </Box>
               </Box>
@@ -543,7 +579,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
                 label="Gasolina inicial"
                 value={formData.gasolinaInicial}
                 color="#5081a5"
-                maxValue={50}
+                maxValue={capacidadGasolina}
                 unit="lt"
                 unitLabel="litros"
                 onChange={handleChange}
@@ -553,7 +589,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
                 label="Gasolina final"
                 value={formData.gasolinaFinal}
                 color="#467a77"
-                maxValue={50}
+                maxValue={capacidadGasolina}
                 unit="lt"
                 unitLabel="litros"
                 onChange={handleChange}
@@ -633,7 +669,7 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
           <TextField
             select
             name="resguardante"
-            label="Empleado responsable"
+            label="Empleado Responsable"
             value={formData.resguardante}
             onChange={handleChange}
             fullWidth
@@ -695,3 +731,10 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     </CenteredDrawer>
   );
 }
+
+
+
+
+
+
+
