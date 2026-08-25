@@ -13,8 +13,8 @@ import axios from "axios";
 import AgregarArticuloDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/AgregarArticuloDrawer";
 import AgregarVehiculoDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/AgregarVehiculoDrawer";
 import ImprimirEtiquetasDrawer from "@/src/app/(authenticated)/componentsModal/drawersUI/general/ImprimirEtiquetasDrawer";
-import ImportarExcel from "@/src/components/Dashboard/ImportarExcel";
-import CapturaRapida from "@/src/components/Dashboard/CapturaRapida";
+import ImportarExcel from "@/src/components/dashboard/ImportarExcel";
+import CapturaRapida from "@/src/components/dashboard/CapturaRapida";
 import { useEstados } from "@/src/hooks/useEstados";
 import { drawerFieldStyles, drawerPrimaryButtonStyles, drawerSecondaryButtonStyles } from "@/src/app/(authenticated)/componentsModal/drawersUI/CenteredDrawer";
 

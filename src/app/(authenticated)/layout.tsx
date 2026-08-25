@@ -3,7 +3,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import AuthProvider from "./AuthProvider";
 import NavBar from '@/src/components/general/functional/NavBar';
 import ThemeRegistry from '@/src/components/ThemeRegistry';
-import { DashboardHeader } from '@/src/components/Dashboard/headerBlanco';
+import { DashboardHeader } from '@/src/components/dashboard/headerBlanco';
 
 export const metadata = {
   title: "Sistema de Inventarios IMPLAN",
