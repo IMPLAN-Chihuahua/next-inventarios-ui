@@ -1,9 +1,6 @@
-import React from 'react'
+import ArticulosPage from "@/src/components/Articulos/ArticulosPage";
 
-const page = () => {
-  return (
-    <div>page</div>
-  )
+export default function Page() {
+  return <ArticulosPage />;
 }
 
-export default page

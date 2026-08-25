@@ -5,6 +5,13 @@ import Credentials from "next-auth/providers/credentials";
 import { jwtDecode } from "jwt-decode";
 
 export const options: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+    maxAge: 8 * 60 * 60,
+  },
+  jwt: {
+    maxAge: 8 * 60 * 60,
+  },
   providers: [
     Credentials({
       id: "next-inventarios-ui",

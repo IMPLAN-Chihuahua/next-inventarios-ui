@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import Dashboard from '../../components/dashboard/DashboardMain';
+import Dashboard from '../../components/Dashboard/DashboardMain';
 
 export default function Home() {
   return (

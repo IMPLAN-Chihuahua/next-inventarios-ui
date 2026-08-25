@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Box, Typography, IconButton, Avatar, Divider } from '@mui/material';
@@ -34,12 +34,26 @@ export default function Navbar() {
     signOut({ callbackUrl: '/' }); // redirige cuando se cierra sesion
   };
 
+  // mostrar/ocultar la sombra del navbar
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 0);
+    };
+
+    handleScroll(); // estado inicial
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     // contenedor principal 
     <Box
       sx={{
         position: 'fixed',
-        top: 24,
+        top: 13,
         left: 0,
         right: 0,
         display: 'flex',
@@ -56,14 +70,19 @@ export default function Navbar() {
           alignItems: 'center',
 
           // efecto glass
-          backgroundColor: 'rgba(255, 255, 255, 0.65)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(255, 255, 255,  0.01)',
+          backdropFilter: 'blur(5px)',
+          WebkitBackdropFilter: 'blur(4px)',
 
           borderRadius: '50px',
-          border: '1px solid rgba(229, 231, 235, 0.5)',
-          boxShadow:
-            '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+          // border: '1px solid rgba(229, 231, 235, 0.5)',
+          border: scrolled
+            ? '1px solid rgba(229, 231, 235, 0.5)'
+            : '1px solid rgba(255, 255, 255, 0.15)',
+          boxShadow: scrolled
+            ? '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)'
+            : 'none',
+          transition: 'box-shadow 0.25s ease, border-color 0.25s ease',
           px: 1,
           py: 0.75,
           gap: { xs: 2, md: 4 },
@@ -84,13 +103,15 @@ export default function Navbar() {
           >
             <Box sx={{ position: 'relative', width: 32, height: 32 }}>
               <Image
-                src="/image.png"
+                src="/logoNavbar.png"
                 alt="Logo"
                 fill
                 style={{ objectFit: 'contain' }}
               />
             </Box>
           </Box>
+
+          <Divider orientation="vertical" flexItem sx={{ my: 0.100 }} />
 
           {/* Enlaces con efecto */}
           <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 3 }}>
@@ -119,7 +140,7 @@ export default function Navbar() {
                       height: '2px',
                       bottom: '-4px',
                       left: 0,
-                      backgroundColor: '#e3a74d',
+                      backgroundColor: '#5081A5',
                       transformOrigin: 'bottom right',
                       transition: 'transform 0.25s ease-out',
                     },
@@ -129,7 +150,7 @@ export default function Navbar() {
                     },
                   }}
                 >
-                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                  <Typography sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
                     {link.label}
                   </Typography>
                 </Box>
@@ -149,11 +170,11 @@ export default function Navbar() {
             sx={{
               width: 35,
               height: 35,
-              backgroundColor: '#e3a74df9',
+              backgroundColor: '#5081A5',
               color: '#ffffff',
               transition: 'background-color 0.2s, transform 0.15s',
               '&:hover': {
-                backgroundColor: '#e9bd56',
+                backgroundColor: '#73aed9',
                 transform: 'scale(1.05)',
               },
             }}
@@ -179,8 +200,13 @@ export default function Navbar() {
                 sx={{
                   width: 36,
                   height: 36,
-                  backgroundColor: '#1d1c1c',
+                  backgroundColor: '#467A77',
                   color: '#ffffff',
+                  transition: 'background-color 0.2s, transform 0.15s',
+                  '&:hover': {
+                    backgroundColor: '#60afab', // Mismo color base del QR para integrarlo visualmente
+                    transform: 'scale(1.05)',
+                  },
                 }}
               >
                 <User size={16} />
