@@ -1,7 +1,18 @@
 "use client";
 
 import { ChangeEvent, DragEvent, useRef, useState } from "react";
-import { Box, Button, Chip, CircularProgress, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Typography,
+} from "@mui/material";
 import { AlertCircle, CheckCircle2, FileSpreadsheet, UploadCloud, X } from "lucide-react";
 import axios from "axios";
 import { inventariosApi } from "@/src/services/axios";
@@ -161,21 +172,6 @@ export default function ImportarExcel({ onImported }: Props) {
         </Box>
       )}
 
-      {result && (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, flexWrap: "wrap" }}>
-          <CheckCircle2 size={16} color="#467a77" />
-          <Chip size="small" label={`${result.importados} importados`} sx={{ height: 24, bgcolor: "#e7f2ef", color: "#356864", fontSize: "0.67rem", fontWeight: 700 }} />
-          {result.rechazados > 0 && (
-            <Chip
-              size="small"
-              label={`${result.rechazados} rechazados`}
-              title={result.errores.map((item) => `Fila ${item.fila}: ${item.mensaje}`).join("\n")}
-              sx={{ height: 24, bgcolor: "#fff0e8", color: "#a64d25", fontSize: "0.67rem", fontWeight: 700 }}
-            />
-          )}
-        </Box>
-      )}
-
       <Button
         variant="contained"
         onClick={handleImport}
@@ -195,6 +191,90 @@ export default function ImportarExcel({ onImported }: Props) {
       >
         {loading ? "Importando artículos..." : "Importar artículos"}
       </Button>
+
+      <Dialog
+        open={Boolean(result)}
+        onClose={() => setResult(null)}
+        fullWidth
+        maxWidth="sm"
+        aria-labelledby="resultado-importacion-title"
+        slotProps={{ paper: { sx: { borderRadius: "20px", overflow: "hidden" } } }}
+      >
+        {result && (
+          <>
+            <DialogTitle
+              id="resultado-importacion-title"
+              sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 2, px: 2.5, py: 2, borderBottom: "1px solid #e7eeee" }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.1 }}>
+                <Box sx={{ width: 38, height: 38, display: "grid", placeItems: "center", borderRadius: "11px", bgcolor: result.rechazados > 0 ? "#fff0e8" : "#e7f2ef" }}>
+                  {result.rechazados > 0 ? <AlertCircle size={21} color="#a64d25" /> : <CheckCircle2 size={21} color="#467a77" />}
+                </Box>
+                <Box>
+                  <Typography sx={{ color: "#263638", fontSize: "1rem", fontWeight: 850 }}>
+                    Resultado de la importación
+                  </Typography>
+                  <Typography sx={{ mt: 0.2, color: "#7d898c", fontSize: "0.7rem" }}>
+                    Revisa los artículos procesados antes de continuar.
+                  </Typography>
+                </Box>
+              </Box>
+              <IconButton aria-label="Cerrar resultado" onClick={() => setResult(null)} size="small" sx={{ color: "#788588" }}>
+                <X size={18} />
+              </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ p: "20px !important" }}>
+              <Box aria-live="polite" sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap", mb: result.rechazados > 0 ? 1.5 : 0 }}>
+                <Chip size="small" label={`${result.importados} importados correctamente`} sx={{ height: 28, bgcolor: "#e7f2ef", color: "#356864", fontSize: "0.7rem", fontWeight: 750 }} />
+                {result.rechazados > 0 && (
+                  <Chip size="small" label={`${result.rechazados} no se importaron`} sx={{ height: 28, bgcolor: "#fff0e8", color: "#a64d25", fontSize: "0.7rem", fontWeight: 750 }} />
+                )}
+              </Box>
+
+              {result.rechazados > 0 && (
+                <Box sx={{ overflow: "hidden", border: "1px solid #f0c9b8", borderRadius: "14px", bgcolor: "#fffaf7" }}>
+                  <Box sx={{ px: 1.5, py: 1.1, borderBottom: "1px solid #f2d9ce", bgcolor: "#fff4ee" }}>
+                    <Typography sx={{ color: "#8c3f24", fontSize: "0.76rem", fontWeight: 800 }}>
+                      Datos que no se importaron
+                    </Typography>
+                    <Typography sx={{ mt: 0.15, color: "#9b6a57", fontSize: "0.66rem" }}>
+                      Corrige estas filas en el Excel y vuelve a importarlas.
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ maxHeight: 310, overflowY: "auto", p: 0.8 }}>
+                    {result.errores.map((item) => (
+                      <Box
+                        key={`${item.fila}-${item.numeroInventario ?? "sin-inventario"}`}
+                        sx={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr)", gap: 1, px: 0.9, py: 0.9, borderRadius: "10px", "&:not(:last-of-type)": { mb: 0.5 }, "&:nth-of-type(odd)": { bgcolor: "#fff4ee" } }}
+                      >
+                        <Box sx={{ minWidth: 48, px: 0.7, py: 0.4, alignSelf: "start", borderRadius: "7px", bgcolor: "#f8dfd3", color: "#914323", fontSize: "0.64rem", fontWeight: 800, textAlign: "center" }}>
+                          Fila {item.fila}
+                        </Box>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography sx={{ color: "#5d3d32", fontSize: "0.71rem", fontWeight: 750, overflowWrap: "anywhere" }}>
+                            {item.numeroInventario ? `Inventario: ${item.numeroInventario}` : "Sin número de inventario"}
+                          </Typography>
+                          <Typography sx={{ mt: 0.15, color: "#875d4e", fontSize: "0.68rem", lineHeight: 1.4, overflowWrap: "anywhere" }}>
+                            {item.mensaje}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </DialogContent>
+
+            <DialogActions sx={{ px: 2.5, py: 1.5, borderTop: "1px solid #e7eeee" }}>
+              <Button onClick={() => setResult(null)} variant="contained" sx={{ minWidth: 110, borderRadius: "10px", bgcolor: "#467a77", boxShadow: "none", textTransform: "none", fontWeight: 750, "&:hover": { bgcolor: "#385f5d", boxShadow: "none" } }}>
+                Cerrar
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 }

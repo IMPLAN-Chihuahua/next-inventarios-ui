@@ -7,6 +7,7 @@ import { CarFront, CircleDollarSign, Fuel, UserRound } from "lucide-react";
 import StepperDrawer, { DrawerStep } from "../WithStepperCenterDrawer";
 import { DrawerSectionTitle, drawerDropdownMenuProps, drawerFieldStyles } from "../CenteredDrawer";
 import { inventariosApi } from "@/src/services/axios";
+import { sanitizeSafeText } from "@/src/utils/safeText";
 
 interface Props { open: boolean; onClose: () => void; onSaved?: () => void }
 interface Usuario { _id?: string; id?: string; nombre?: string; activo?: boolean }
@@ -14,6 +15,7 @@ const TRANSPORTE_ID = "0c63012a-e7a2-4239-b7ff-4c17fe9b38dc";
 const today = () => { const date = new Date(); const offset = date.getTimezoneOffset(); return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10); };
 const formatInventory = (value: string) => { const digits = value.replace(/\D/g, "").slice(0, 11); return digits.length > 10 ? `${digits.slice(0, 10)}-${digits.slice(10)}` : digits; };
 const initial = { numeroInventario: "", descripcion: "", noSerie: "", marca: "", modelo: "", tipoEnergia: "Gasolina", capacidadCombustible: "", costo: "", datosFactura: "", fechaFactura: today(), localizacion: "No especificada", estado: "Asignado", resguardante: "", observaciones: "" };
+const SAFE_VEHICLE_FIELDS = new Set<keyof typeof initial>(["descripcion", "noSerie", "marca", "modelo", "datosFactura", "localizacion", "observaciones"]);
 
 export default function AgregarVehiculoDrawer({
 
@@ -22,7 +24,12 @@ export default function AgregarVehiculoDrawer({
   const [form, setForm] = useState(initial); const [usuarios, setUsuarios] = useState<Usuario[]>([]); const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
   const loadUsers = useCallback(async () => { try { const response = await inventariosApi.get("/usuarios", { params: { limit: 1000, fields: "nombre,activo" } }); const data = Array.isArray(response.data) ? response.data : response.data.data || []; setUsuarios((data as Usuario[]).filter((u) => u.activo === true)); } catch { setError("No fue posible cargar los empleados activos."); } }, []);
   useEffect(() => { if (open && !usuarios.length) void loadUsers(); }, [open, usuarios.length, loadUsers]);
-  const set = (name: keyof typeof form, value: string) => setForm((current) => ({ ...current, [name]: name === "numeroInventario" ? formatInventory(value) : value, ...(name === "estado" && value !== "Asignado" ? { resguardante: "" } : {}) }));
+  const set = (name: keyof typeof form, value: string) => {
+    const sanitizedValue = name === "numeroInventario"
+      ? formatInventory(value)
+      : SAFE_VEHICLE_FIELDS.has(name) ? sanitizeSafeText(value) : value;
+    setForm((current) => ({ ...current, [name]: sanitizedValue, ...(name === "estado" && sanitizedValue !== "Asignado" ? { resguardante: "" } : {}) }));
+  };
   const validateVehicle = () => { if (!/^\d{10}-\d$/.test(form.numeroInventario) || !form.noSerie.trim() || !form.descripcion.trim()) { setError("Completa descripción, número de serie y un inventario válido de 11 dígitos."); return false; } if (form.tipoEnergia === "Gasolina" && (!form.capacidadCombustible || Number(form.capacidadCombustible) <= 0 || Number(form.capacidadCombustible) > 120)) { setError("Indica una capacidad del tanque entre 1 y 120 litros."); return false; } setError(""); return true; };
   const validateInvoice = () => { if (!form.costo || !form.datosFactura.trim() || !form.fechaFactura) { setError("Completa costo, datos de factura y fecha de factura."); return false; } setError(""); return true; };
   const validateAssignment = () => { if (form.estado === "Asignado" && !form.resguardante) { setError("Selecciona un empleado responsable."); return false; } setError(""); return true; };

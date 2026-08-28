@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
+  Alert,
   Box,
   TextField,
   Button,
@@ -16,6 +17,7 @@ import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import LocalGasStationRoundedIcon from "@mui/icons-material/LocalGasStationRounded";
 import ElectricBoltRoundedIcon from "@mui/icons-material/ElectricBoltRounded";
 import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
+import axios from "axios";
 import CenteredDrawer, {
   DrawerSectionTitle,
   drawerDropdownMenuProps,
@@ -23,6 +25,8 @@ import CenteredDrawer, {
   drawerPrimaryButtonStyles,
   drawerSecondaryButtonStyles,
 } from "../CenteredDrawer";
+import { sanitizeSafeText } from "@/src/utils/safeText";
+import { inventariosApi } from "@/src/services/axios";
 
 interface Props {
   open: boolean;
@@ -48,7 +52,42 @@ interface Usuario {
   activo?: boolean;
 }
 
-const CATEGORIA_TRANSPORTE_ID = "0c63012a-e7a2-4239-b7ff-4c17fe9b38dc";
+interface Categoria {
+  id?: string;
+  _id?: string;
+  tipo?: string;
+  descripcion?: string;
+}
+
+interface ApiList<T> {
+  data?: T[];
+  items?: T[];
+}
+
+const CATEGORIAS_TRANSPORTE_CONOCIDAS = [
+  "0c63012a-e7a2-4239-b7ff-4c17fe9b38dc",
+  "06920298-9dda-4214-9573-e4c38f4ceb1d",
+];
+
+const VEHICULOS_HISTORICOS_IDS = [
+  "a8acfc38-9105-4078-ac14-c480183f92d7",
+  "33c7abe6-5b57-4bc5-8464-85d2cf95e67c",
+  "943470b6-0a4d-4a7e-8532-004a67484d46",
+  "e35731c5-d07f-49b4-b24b-3605ce1085af",
+  "97ca1271-e8e2-422c-86e6-30fe01fdac36",
+  "e5ac48df-11f9-4cad-bbba-2069c8367dca",
+  "2b7d0744-07ed-4829-aa2d-75c5a7d5bb3c",
+];
+
+const normalizarCatalogo = (value?: string) => (value || "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toUpperCase();
+
+const esCategoriaTransporte = (categoria: Categoria) => {
+  const texto = normalizarCatalogo(`${categoria.tipo || ""} ${categoria.descripcion || ""}`);
+  return texto.includes("TRANSPORT") || texto.includes("VEHICUL");
+};
 
 const obtenerCapacidadGasolina = (vehiculo?: Vehiculo) => {
   if (vehiculo?.capacidadCombustible) return vehiculo.capacidadCombustible;
@@ -206,43 +245,78 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loadingCarga, setLoadingCarga] = useState(false);
+  const [errorCarga, setErrorCarga] = useState("");
+  const [errorSubmit, setErrorSubmit] = useState("");
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
   const cargarDatos = useCallback(async () => {
     await Promise.resolve();
     setLoadingCarga(true);
-    try {
-      const [resVehiculos, resUsuarios] = await Promise.all([
-        fetch(`/api/v1/articulos?categorias=${CATEGORIA_TRANSPORTE_ID}&limit=1000`),
-        fetch('/api/v1/usuarios?limit=1000&fields=nombre,correo,activo')
-      ]);
+    setErrorCarga("");
 
-      if (resVehiculos.ok) {
-        const jsonVehiculos = await resVehiculos.json();
-        const listaArticulos = Array.isArray(jsonVehiculos)
-          ? jsonVehiculos
-          : (jsonVehiculos.data || jsonVehiculos.items || []);
-        setVehiculos(listaArticulos);
-      } else {
-        const errorBody = await resVehiculos.text();
-        console.error("Error al cargar articulos:", resVehiculos.status, errorBody);
-      }
+    const [resultadoCategorias, resultadoUsuarios] = await Promise.allSettled([
+      inventariosApi.get<Categoria[] | ApiList<Categoria>>("/categorias", {
+        params: { limit: 1000, fields: "tipo,descripcion" },
+      }),
+      inventariosApi.get<Usuario[] | ApiList<Usuario>>("/usuarios", {
+        params: { limit: 1000, fields: "nombre,correo,activo" },
+      }),
+    ]);
 
-      if (resUsuarios.ok) {
-        const jsonUsuarios = await resUsuarios.json();
-        const listaUsuarios = Array.isArray(jsonUsuarios)
-          ? jsonUsuarios
-          : (jsonUsuarios.data || jsonUsuarios.items || []);
-        setUsuarios((listaUsuarios as Usuario[]).filter((usuario) => usuario.activo === true));
-      } else {
-        const errorBody = await resUsuarios.text();
-        console.error("Error al cargar usuarios:", resUsuarios.status, errorBody);
-      }
-    } catch (error) {
-      console.error("Error al cargar los catálogos (excepción):", error);
-    } finally {
-      setLoadingCarga(false);
+    const categoriasTransporte = new Set(CATEGORIAS_TRANSPORTE_CONOCIDAS);
+    if (resultadoCategorias.status === "fulfilled") {
+      const respuesta = resultadoCategorias.value.data;
+      const categorias = Array.isArray(respuesta) ? respuesta : respuesta.data || respuesta.items || [];
+      categorias.filter(esCategoriaTransporte).forEach((categoria) => {
+        const id = categoria.id || categoria._id;
+        if (id) categoriasTransporte.add(id);
+      });
+    } else {
+      console.error("Error al identificar la categoría Transporte:", resultadoCategorias.reason);
     }
+
+    const [resultadoVehiculos, ...resultadosHistoricos] = await Promise.allSettled([
+      inventariosApi.get<Vehiculo[] | ApiList<Vehiculo>>("/articulos", {
+        params: { categorias: Array.from(categoriasTransporte).join(","), limit: 1000 },
+      }),
+      ...VEHICULOS_HISTORICOS_IDS.map((id) => inventariosApi.get<Vehiculo>(`/articulos/${id}`)),
+    ]);
+
+    const vehiculosPorId = new Map<string, Vehiculo>();
+    if (resultadoVehiculos.status === "fulfilled") {
+      const respuesta = resultadoVehiculos.value.data;
+      const lista = Array.isArray(respuesta) ? respuesta : respuesta.data || respuesta.items || [];
+      lista.forEach((vehiculo) => {
+        const id = vehiculo.id || vehiculo._id;
+        if (id) vehiculosPorId.set(id, vehiculo);
+      });
+    }
+
+    resultadosHistoricos.forEach((resultado) => {
+      if (resultado.status !== "fulfilled") return;
+      const vehiculo = resultado.value.data;
+      const id = vehiculo.id || vehiculo._id;
+      if (id) vehiculosPorId.set(id, vehiculo);
+    });
+
+    setVehiculos(Array.from(vehiculosPorId.values()));
+    if (resultadoVehiculos.status === "rejected" && vehiculosPorId.size === 0) {
+      setVehiculos([]);
+      setErrorCarga("No fue posible cargar la lista de vehículos.");
+      console.error("Error al cargar vehículos:", resultadoVehiculos.reason);
+    }
+
+    if (resultadoUsuarios.status === "fulfilled") {
+      const respuesta = resultadoUsuarios.value.data;
+      const lista = Array.isArray(respuesta) ? respuesta : respuesta.data || respuesta.items || [];
+      setUsuarios(lista.filter((usuario) => usuario.activo === true));
+    } else {
+      setUsuarios([]);
+      setErrorCarga((actual) => actual || "No fue posible cargar la lista de empleados.");
+      console.error("Error al cargar usuarios:", resultadoUsuarios.reason);
+    }
+
+    setLoadingCarga(false);
   }, []);
 
   useEffect(() => {
@@ -271,6 +345,9 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     if (value !== "" && limite !== undefined) {
       value = String(Math.min(Math.max(Number(value), 0), limite));
     }
+    if (name === "folio" || name === "comentarios") {
+      value = sanitizeSafeText(value);
+    }
 
     setFormData({ ...formData, [name]: value });
   };
@@ -297,24 +374,30 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
   };
 
   const handleSubmit = async () => {
+    setErrorSubmit("");
+
     if (!formData.articuloId) {
-      alert("Por favor, selecciona un vehículo.");
+      setErrorSubmit("Selecciona un vehículo.");
       return;
     }
-      if (!formData.resguardante) {
-    alert("Por favor, selecciona un empleado responsable.");
-    return;
-  }
+    if (!formData.resguardante) {
+      setErrorSubmit("Selecciona un empleado responsable.");
+      return;
+    }
 
     setLoadingSubmit(true);
     try {
       const payload: Record<string, unknown> = { ...formData };
-      
+
       const { articuloId } = payload;
       delete payload.articuloId;
       delete payload.cargaGasolinaElectrica;
 
-      if (!payload.fecha) delete payload.fecha;
+      ["folio", "fecha", "vehiculo", "comentarios"].forEach((campo) => {
+        if (typeof payload[campo] === "string" && payload[campo].trim() === "") {
+          delete payload[campo];
+        }
+      });
       [
         "cargaInicial",
         "cargaFinal",
@@ -330,21 +413,16 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
         }
       });
 
-      const response = await fetch(`/api/v1/resguardos/vehiculo/${articuloId}/resguardo/download`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await inventariosApi.post<Blob>(
+        `/resguardos/vehiculo/${articuloId}/resguardo/download`,
+        payload,
+        {
+          responseType: "blob",
+          timeout: 60000,
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: "Error desconocido del servidor" }));
-        console.error("Detalles del error del backend:", errorData);
-        throw new Error(errorData.message || "Error al generar el resguardo");
-      }
-
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -356,8 +434,33 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
 
       onClose();
     } catch (error) {
-      console.error(error);
-      alert("Error al intentar generar el resguardo.");
+      let message = "No fue posible generar el resguardo vehicular.";
+
+      if (axios.isAxiosError(error)) {
+        let errorData = error.response?.data as unknown;
+        if (errorData instanceof Blob) {
+          const text = await errorData.text();
+          try {
+            errorData = JSON.parse(text);
+          } catch {
+            if (text.trim()) message = text;
+          }
+        }
+
+        if (errorData && typeof errorData === "object") {
+          const backendError = errorData as { message?: string; errors?: string[] };
+          if (backendError.message) message = backendError.message;
+          else if (Array.isArray(backendError.errors) && backendError.errors.length > 0) {
+            message = backendError.errors.join(" · ");
+          }
+        }
+
+        if (!error.response) {
+          message = "No se pudo conectar con el backend. Verifica que esté ejecutándose en el puerto 8080.";
+        }
+      }
+
+      setErrorSubmit(message);
     } finally {
       setLoadingSubmit(false);
     }
@@ -424,6 +527,26 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
             title="Datos del vehículo"
             description="Completa la información del vehículo."
           />
+
+          {errorCarga && (
+            <Alert
+              severity="error"
+              sx={{ gridColumn: { xs: "auto", sm: "span 2" }, borderRadius: "12px", alignItems: "center" }}
+              action={
+                <Button color="inherit" size="small" onClick={() => void cargarDatos()} disabled={loadingCarga} sx={{ fontWeight: 750, textTransform: "none" }}>
+                  Reintentar
+                </Button>
+              }
+            >
+              {errorCarga}
+            </Alert>
+          )}
+
+          {errorSubmit && (
+            <Alert severity="error" sx={{ gridColumn: "1 / -1", borderRadius: "12px" }}>
+              {errorSubmit}
+            </Alert>
+          )}
 
           <TextField
             select
@@ -731,10 +854,3 @@ export default function ResguardoVehicularDrawer({ open, onClose }: Props) {
     </CenteredDrawer>
   );
 }
-
-
-
-
-
-
-

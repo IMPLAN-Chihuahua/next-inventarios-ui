@@ -6,6 +6,7 @@ import { BadgeCheck, BriefcaseBusiness, Building2, Edit3, FilterX, Hash, Mail, M
 import axios from "axios";
 import { inventariosApi } from "@/src/services/axios";
 import { drawerFieldStyles, drawerPrimaryButtonStyles, drawerSecondaryButtonStyles } from "@/src/app/(authenticated)/componentsModal/drawersUI/CenteredDrawer";
+import { sanitizeSafeText } from "@/src/utils/safeText";
 
 interface Usuario { _id: string; nombre: string; correo: string; rol?: string; activo?: boolean; departamento?: string; puesto?: string; numeroEmpleado?: string }
 interface ApiResponse { data: Usuario[]; pagination: { total: number; totalPages: number; page: number; limit: number } }
@@ -15,6 +16,7 @@ interface FormData { nombre: string; correo: string; clave: string; rol: string;
 const DEPARTAMENTOS = ["Geomática", "TICs", "Planes y programas", "Vinculación y Difusión", "Jurídico", "Administración", "Dirección", "Subdirección", "Intendencia", "Recursos Humanos, Materiales y Administrativos", "Mantenimiento y Mensajería", "Recepción", "Coordinación Administrativa"];
 const emptyForm = (): FormData => ({ nombre: "", correo: "", clave: "", rol: "User", activo: "true", departamento: "", puesto: "", numeroEmpleado: "" });
 const toForm = (usuario: Usuario): FormData => ({ nombre: usuario.nombre || "", correo: usuario.correo || "", clave: "", rol: usuario.rol || "User", activo: usuario.activo === false ? "false" : "true", departamento: usuario.departamento || "", puesto: usuario.puesto || "", numeroEmpleado: usuario.numeroEmpleado || "" });
+const SAFE_USER_FIELDS = new Set<keyof FormData>(["nombre", "departamento", "puesto", "numeroEmpleado"]);
 
 export default function UsersPage() {
   const [rows, setRows] = useState<Usuario[]>([]); const [total, setTotal] = useState(0); const [loading, setLoading] = useState(true);
@@ -41,7 +43,10 @@ export default function UsersPage() {
   const openCreate = () => { setEditing(null); setForm(emptyForm()); resetReassignment(); setMessage(null); setDrawerOpen(true); };
   const openEdit = (usuario: Usuario) => { setEditing(usuario); setForm(toForm(usuario)); resetReassignment(); setAnchor(null); setDrawerOpen(true); };
   const openDetails = (usuario: Usuario) => { setAnchor(null); setDetailUser(usuario); };
-  const set = (field: keyof FormData, value: string) => setForm((current) => ({ ...current, [field]: value }));
+  const set = (field: keyof FormData, value: string) => setForm((current) => ({
+    ...current,
+    [field]: SAFE_USER_FIELDS.has(field) ? sanitizeSafeText(value) : value,
+  }));
   const validate = () => {
     if (!form.nombre.trim() || !form.numeroEmpleado.trim() || !form.correo.trim() || !form.departamento || !form.puesto.trim()) return "Completa nombre, número de empleado, correo, departamento y puesto.";
     if (!/^\S+@\S+\.\S+$/.test(form.correo)) return "Ingresa un correo electrónico válido.";
@@ -113,7 +118,6 @@ export default function UsersPage() {
 function DetailRow({ icon, label, value }: { icon: React.ReactNode; label: string; value?: string }) {
   return <Box sx={{ display: "flex", alignItems: "center", gap: 1.3, py: 1.25, borderBottom: "1px solid #edf1f1", "&:last-child": { borderBottom: 0 } }}><Box sx={{ width: 35, height: 35, borderRadius: "10px", bgcolor: "#edf4f3", color: "#57807d", display: "grid", placeItems: "center", flexShrink: 0 }}>{icon}</Box><Box sx={{ minWidth: 0 }}><Typography sx={{ color: "#919c9e", fontSize: ".63rem", fontWeight: 750, textTransform: "uppercase", letterSpacing: ".05em" }}>{label}</Typography><Typography sx={{ color: "#34474b", fontSize: ".78rem", fontWeight: 750, mt: .15, overflowWrap: "anywhere" }}>{value || "No especificado"}</Typography></Box></Box>;
 }
-
 
 
 

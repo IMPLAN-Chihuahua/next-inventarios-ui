@@ -11,6 +11,7 @@ import {
 import { ClipboardList, Copy, Plus, Save, Trash2, X } from "lucide-react";
 import axios from "axios";
 import { inventariosApi } from "@/src/services/axios";
+import { sanitizeSafeText } from "@/src/utils/safeText";
 
 interface Props { onSaved: () => void; controlledOpen?: boolean; onControlledClose?: () => void; hideLauncher?: boolean }
 interface Catalogo { _id?: string; id?: string; tipo?: string; descripcion?: string; nombre?: string; activo?: boolean }
@@ -31,6 +32,10 @@ const today = () => {
   return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10);
 };
 const LOCALIZACIONES = ["Área técnica", "Site", "Lactario", "Cocina", "Jurídico", "Sala Dr. Ríos", "Sala capacitaciones", "Dirección", "Subdirección", "Administrativo"];
+const SAFE_CAPTURE_FIELDS = new Set<keyof Fila>(["descripcion", "noSerie", "datosFactura"]);
+const sanitizeField = (field: keyof Fila, value: string) => field === "numeroInventario"
+  ? formatInventario(value)
+  : SAFE_CAPTURE_FIELDS.has(field) ? sanitizeSafeText(value) : value;
 let nextKey = 1;
 const nuevaFila = (): Fila => ({
   key: nextKey++, numeroInventario: "", descripcion: "", noSerie: "", categoria: "",
@@ -121,7 +126,7 @@ export default function CapturaRapida({
 
   const update = (key: number, field: keyof Fila, value: string) => {
     setFilas((current) => current.map((fila) => fila.key === key ? {
-      ...fila, [field]: field === "numeroInventario" ? formatInventario(value) : value, error: undefined,
+      ...fila, [field]: sanitizeField(field, value), error: undefined,
       ...(field === "estado" && value !== "Asignado" ? { resguardante: "" } : {}),
       ...(field === "resguardante" && value ? { estado: "Asignado" } : {}),
     } : fila));
@@ -140,7 +145,7 @@ export default function CapturaRapida({
       while (result.length < start + lines.length) result.push(nuevaFila());
       lines.forEach((cells, rowIndex) => {
         const row: Fila = { ...result[start + rowIndex], error: undefined };
-        cells.forEach((cell, columnIndex) => { const field = fields[columnIndex]; if (field) row[field] = field === "numeroInventario" ? formatInventario(cell) : cell.trim(); });
+        cells.forEach((cell, columnIndex) => { const field = fields[columnIndex]; if (field) row[field] = sanitizeField(field, cell.trim()); });
         result[start + rowIndex] = row;
       });
       return result;

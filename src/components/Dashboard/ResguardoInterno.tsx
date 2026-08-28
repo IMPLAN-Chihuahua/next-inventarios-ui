@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
-  Alert, Autocomplete, Box, Button, Checkbox, CircularProgress, Dialog, DialogActions, FormControlLabel,
-  DialogContent, DialogTitle, IconButton, MenuItem, TextField, Typography,
+  Alert, Autocomplete, Box, Button, Checkbox, FormControlLabel, MenuItem, TextField, Typography,
 } from "@mui/material";
 import { CheckCircle2, FileDown, PackageSearch, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import axios from "axios";
 import { inventariosApi } from "@/src/services/axios";
+import { sanitizeSafeText } from "@/src/utils/safeText";
 import StepperDrawer, { DrawerStep } from "@/src/app/(authenticated)/componentsModal/drawersUI/WithStepperCenterDrawer";
 import { DrawerSectionTitle, drawerDropdownMenuProps, drawerFieldStyles } from "@/src/app/(authenticated)/componentsModal/drawersUI/CenteredDrawer";
 
@@ -76,7 +76,6 @@ export default function ResguardoInterno({ onSaved, controlledOpen, onControlled
   useEffect(() => {
     const value = query.trim();
     if (!open || value.length < 2) {
-      setOptions([]);
       return;
     }
     const controller = new AbortController();
@@ -149,8 +148,24 @@ export default function ResguardoInterno({ onSaved, controlledOpen, onControlled
       return true;
     } catch (requestError) {
       console.error(requestError);
-      if (axios.isAxiosError(requestError) && requestError.response?.status === 422) {
-        setError("Revisa los datos del resguardo.");
+      if (axios.isAxiosError(requestError)) {
+        let responseData = requestError.response?.data as
+          | Blob
+          | { message?: string; errors?: string[] }
+          | undefined;
+
+        if (responseData instanceof Blob) {
+          try {
+            responseData = JSON.parse(await responseData.text()) as { message?: string; errors?: string[] };
+          } catch {
+            responseData = undefined;
+          }
+        }
+
+        const message = responseData?.message || responseData?.errors?.join(" · ");
+        setError(message || (requestError.response?.status === 422
+          ? "Revisa los datos del resguardo."
+          : "No fue posible asignar los artículos y generar el resguardo."));
       } else {
         setError("No fue posible asignar los artículos y generar el resguardo.");
       }
@@ -165,16 +180,12 @@ export default function ResguardoInterno({ onSaved, controlledOpen, onControlled
   const validateReview = () => { if (!articulosConOtroResponsable.length || confirmarReasignacion) { setError(""); return true; } setError("Confirma el cambio de resguardante antes de finalizar."); return false; };
   const articleList = <Box sx={{ mt: 1.5, display: "flex", flexDirection: "column", gap: .9, maxHeight: 300, overflowY: "auto" }}>{!articulos.length ? <Typography sx={{ py: 4, color: "#90999e", fontSize: ".76rem", textAlign: "center" }}>Aún no has agregado artículos.</Typography> : articulos.map((articulo, index) => <Box key={articulo._id} sx={{ display: "grid", gridTemplateColumns: "36px minmax(0,1fr) 120px 36px", gap: 1, alignItems: "center", p: 1.15, border: "1px solid #e0e9e8", borderLeft: "4px solid #6f9d99", borderRadius: "12px", bgcolor: "#fbfdfd" }}><Typography sx={{ color: "#8b969b", fontSize: ".72rem", textAlign: "center" }}>{index + 1}</Typography><Box sx={{ minWidth: 0 }}><Typography noWrap sx={{ color: "#34454c", fontSize: ".78rem", fontWeight: 750 }}>{articulo.numeroInventario}</Typography><Typography noWrap sx={{ color: "#879298", fontSize: ".68rem" }}>{articulo.descripcion || "Sin descripción"}</Typography></Box><Typography noWrap sx={{ color: "#66757b", fontSize: ".7rem" }}>{articulo.estado || "Sin estado"}</Typography><Button color="error" onClick={() => setArticulos((current) => current.filter((item) => item._id !== articulo._id))}><Trash2 size={15} /></Button></Box>)}</Box>;
   const steps: DrawerStep[] = [
-    { label: "Responsable", validate: validateResponsible, content: () => <>{error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}<Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1.5fr" }, gap: 1.5, p: 2, bgcolor: "#fff", border: "1px solid #e4eaec", borderRadius: "16px" }}><DrawerSectionTitle icon={<UserRound size={18} />} title="Responsable del resguardo" description="Selecciona al empleado activo que quedará a cargo de los bienes." /><TextField required label="Folio" value={folio} onChange={(e) => setFolio(e.target.value)} sx={drawerFieldStyles} /><TextField select required label="Empleado responsable" value={usuarioId} onChange={(e) => { setUsuarioId(e.target.value); setConfirmarReasignacion(false); }} disabled={loadingUsers} sx={drawerFieldStyles} slotProps={{ select: { MenuProps: drawerDropdownMenuProps } }}>{usuarios.length ? usuarios.map((u) => <MenuItem key={u.id || u._id} value={u.id || u._id}>{u.nombre}</MenuItem>) : <MenuItem disabled value="">{loadingUsers ? "Cargando..." : "Sin trabajadores activos"}</MenuItem>}</TextField>{selectedUser && <Box sx={{ gridColumn: { sm: "1/-1" }, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3,1fr)" }, gap: 1, p: 1.5, bgcolor: "#eef6f5", borderLeft: "4px solid #467A77", borderRadius: "12px" }}><Typography>Empleado: <b>{selectedUser.numeroEmpleado || "—"}</b></Typography><Typography>Área: <b>{selectedUser.departamento || "—"}</b></Typography><Typography>Puesto: <b>{selectedUser.puesto || "—"}</b></Typography></Box>}</Box></> },
-    { label: "Seleccionar bienes", validate: validateArticles, content: () => <>{error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}<Box sx={{ p: 2, bgcolor: "#fff", border: "1px solid #e4eaec", borderRadius: "16px" }}><DrawerSectionTitle icon={<PackageSearch size={18} />} title="Bienes a resguardar" description="Agrega los artículos que quedarán bajo responsabilidad del empleado." /><Autocomplete options={options} loading={searching} filterOptions={(items) => items} inputValue={query} value={null} getOptionLabel={(o) => o.numeroInventario + " · " + (o.descripcion || "Sin descripción")} isOptionEqualToValue={(o,v) => o._id === v._id} onInputChange={(_,v) => setQuery(v)} onChange={(_,v) => { if(!v)return; setArticulos((current)=>[...current,v]); setQuery(""); setOptions([]); setError(""); }} noOptionsText={query.trim().length < 2 ? "Escribe al menos dos caracteres" : "Sin coincidencias"} renderInput={(params) => <TextField {...params} placeholder="Buscar por inventario, serie o descripción" sx={{ ...drawerFieldStyles, mt: 1.5 }} />} />{articleList}</Box></> },
+    { label: "Responsable", validate: validateResponsible, content: () => <>{error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}<Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1.5fr" }, gap: 1.5, p: 2, bgcolor: "#fff", border: "1px solid #e4eaec", borderRadius: "16px" }}><DrawerSectionTitle icon={<UserRound size={18} />} title="Responsable del resguardo" description="Selecciona al empleado activo que quedará a cargo de los bienes." /><TextField required label="Folio" value={folio} onChange={(e) => setFolio(sanitizeSafeText(e.target.value))} sx={drawerFieldStyles} /><TextField select required label="Empleado responsable" value={usuarioId} onChange={(e) => { setUsuarioId(e.target.value); setConfirmarReasignacion(false); }} disabled={loadingUsers} sx={drawerFieldStyles} slotProps={{ select: { MenuProps: drawerDropdownMenuProps } }}>{usuarios.length ? usuarios.map((u) => <MenuItem key={u.id || u._id} value={u.id || u._id}>{u.nombre}</MenuItem>) : <MenuItem disabled value="">{loadingUsers ? "Cargando..." : "Sin trabajadores activos"}</MenuItem>}</TextField>{selectedUser && <Box sx={{ gridColumn: { sm: "1/-1" }, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3,1fr)" }, gap: 1, p: 1.5, bgcolor: "#eef6f5", borderLeft: "4px solid #467A77", borderRadius: "12px" }}><Typography>Empleado: <b>{selectedUser.numeroEmpleado || "—"}</b></Typography><Typography>Área: <b>{selectedUser.departamento || "—"}</b></Typography><Typography>Puesto: <b>{selectedUser.puesto || "—"}</b></Typography></Box>}</Box></> },
+    { label: "Seleccionar bienes", validate: validateArticles, content: () => <>{error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}<Box sx={{ p: 2, bgcolor: "#fff", border: "1px solid #e4eaec", borderRadius: "16px" }}><DrawerSectionTitle icon={<PackageSearch size={18} />} title="Bienes a resguardar" description="Agrega los artículos que quedarán bajo responsabilidad del empleado." /><Autocomplete options={query.trim().length < 2 ? [] : options} loading={searching} filterOptions={(items) => items} inputValue={query} value={null} getOptionLabel={(o) => o.numeroInventario + " · " + (o.descripcion || "Sin descripción")} isOptionEqualToValue={(o,v) => o._id === v._id} onInputChange={(_,v) => { setQuery(v); if (v.trim().length < 2) setOptions([]); }} onChange={(_,v) => { if(!v)return; setArticulos((current)=>[...current,v]); setQuery(""); setOptions([]); setError(""); }} noOptionsText={query.trim().length < 2 ? null : "Sin coincidencias"} renderInput={(params) => <TextField {...params} placeholder="Buscar por inventario, serie o descripción" sx={{ ...drawerFieldStyles, mt: 1.5 }} />} />{articleList}</Box></> },
     { label: "Revisar", validate: validateReview, content: () => <Box sx={{ p: 2.5, border: "1px solid #dce8e7", borderRadius: "16px", bgcolor: "#f7fbfa" }}><DrawerSectionTitle icon={<CheckCircle2 size={18} />} title="Confirmar asignación" description="Al finalizar, los bienes quedarán asignados y se descargará el formato." /><Box sx={{ mt: 2, display: "grid", gap: 1 }}><Typography><b>Folio:</b> {folio}</Typography><Typography><b>Responsable:</b> {selectedUser?.nombre}</Typography><Typography><b>Artículos:</b> {articulos.length}</Typography></Box>{articulosConOtroResponsable.length > 0 && <Alert severity="warning" sx={{ mt: 2, borderRadius: "12px", alignItems: "flex-start" }}><Typography sx={{ fontSize: ".76rem", fontWeight: 800, mb: .7 }}>{articulosConOtroResponsable.length} artículo(s) ya tienen resguardante:</Typography>{articulosConOtroResponsable.map((articulo) => <Typography key={articulo._id} sx={{ fontSize: ".72rem", mb: .25 }}><b>{articulo.numeroInventario}</b> tiene como resguardante a {responsableNombre(articulo.resguardante)}.</Typography>)}<FormControlLabel sx={{ mt: 1, alignItems: "flex-start" }} control={<Checkbox size="small" checked={confirmarReasignacion} onChange={(event) => setConfirmarReasignacion(event.target.checked)} />} label={<Typography sx={{ fontSize: ".73rem", pt: .35 }}>Sí, quiero cambiar {articulosConOtroResponsable.length === 1 ? "este artículo" : "estos artículos"} por <b>{selectedUser?.nombre}</b>.</Typography>} /></Alert>}{error && <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert>}{articleList}</Box> },
   ];
   return <>{!hideLauncher && <Box sx={{ flex: 1, minHeight: 0, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1.5 }}><Typography sx={{ color: "#67757b", fontSize: ".72rem" }}>Asigna artículos a un trabajador y genera su formato.</Typography><Button size="small" variant="contained" startIcon={<FileDown size={15} />} onClick={() => setOpen(true)} sx={{ bgcolor: "#709c99", textTransform: "none" }}>Crear</Button></Box>}<StepperDrawer open={open} onClose={close} title="Crear resguardo interno" subtitle="Completa cada etapa para asignar y documentar los bienes." icon={<ShieldCheck size={22} />} steps={steps} onFinish={save} finishLabel="Asignar y descargar" disabled={saving || loadingUsers} size="wide" /></>;
 }
-
-
-
-
 
 
 

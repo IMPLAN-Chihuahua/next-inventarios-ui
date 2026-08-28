@@ -13,6 +13,7 @@ import NotesRoundedIcon from "@mui/icons-material/NotesRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import axios from "axios";
 import { inventariosApi } from "@/src/services/axios";
+import { sanitizeSafeText } from "@/src/utils/safeText";
 import StepperDrawer, { DrawerStep } from "../WithStepperCenterDrawer";
 import {
   DrawerSectionTitle,
@@ -97,6 +98,10 @@ const initialFormData: ArticuloFormData = {
   resguardante: "",
 };
 
+const SAFE_TEXT_FIELDS = new Set<keyof ArticuloFormData>([
+  "datosFactura", "descripcion", "localizacion", "marca", "modelo", "noSerie", "observaciones",
+]);
+
 const getList = <T,>(json: unknown): T[] => {
   if (Array.isArray(json)) return json as T[];
   if (!json || typeof json !== "object") return [];
@@ -167,10 +172,14 @@ export default function AgregarArticuloDrawer({
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
+    const field = name as keyof ArticuloFormData;
+    const sanitizedValue = name === "numeroInventario"
+      ? formatInventario(value)
+      : SAFE_TEXT_FIELDS.has(field) ? sanitizeSafeText(value) : value;
     setFormData((current) => ({
       ...current,
-      [name]: name === "numeroInventario" ? formatInventario(value) : value,
-      ...(name === "estado" && value !== "Asignado" ? { resguardante: "" } : {}),
+      [name]: sanitizedValue,
+      ...(name === "estado" && sanitizedValue !== "Asignado" ? { resguardante: "" } : {}),
     }));
     setErrorMessage("");
   };
